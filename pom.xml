@@ -134,6 +134,8 @@
         <module>presto-proxy</module>
         <module>presto-kudu</module>
         <module>presto-elasticsearch</module>
+        <module>presto-csv</module>
+        <module>presto-excel</module>
     </modules>
 
     <dependencyManagement>
@@ -143,6 +145,18 @@
                 <artifactId>presto-spi</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>io.prestosql</groupId>
+                <artifactId>presto-csv</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.prestosql</groupId>
+                <artifactId>presto-excel</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
 
             <dependency>
                 <groupId>io.prestosql</groupId>
