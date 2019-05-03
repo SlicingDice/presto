@@ -39,6 +39,7 @@ import io.prestosql.execution.scheduler.NodeSchedulerConfig;
 import io.prestosql.execution.warnings.WarningCollectorModule;
 import io.prestosql.metadata.Catalog;
 import io.prestosql.metadata.CatalogManager;
+import io.prestosql.metadata.CatalogStoreWrapper;
 import io.prestosql.metadata.StaticCatalogStore;
 import io.prestosql.security.AccessControlManager;
 import io.prestosql.security.AccessControlModule;
@@ -124,7 +125,7 @@ public class PrestoServer
 
             injector.getInstance(PluginManager.class).loadPlugins();
 
-            injector.getInstance(StaticCatalogStore.class).loadCatalogs();
+            injector.getInstance(CatalogStoreWrapper.class).loadCatalogs();
 
             // TODO: remove this huge hack
             updateConnectorIds(
