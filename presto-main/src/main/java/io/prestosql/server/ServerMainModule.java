@@ -68,6 +68,7 @@ import io.prestosql.memory.MemoryResource;
 import io.prestosql.memory.NodeMemoryConfig;
 import io.prestosql.metadata.AnalyzePropertyManager;
 import io.prestosql.metadata.CatalogManager;
+import io.prestosql.metadata.CatalogStoreWrapper;
 import io.prestosql.metadata.ColumnPropertyManager;
 import io.prestosql.metadata.DiscoveryNodeManager;
 import io.prestosql.metadata.ForNodeManager;
@@ -75,6 +76,7 @@ import io.prestosql.metadata.HandleJsonModule;
 import io.prestosql.metadata.InternalNodeManager;
 import io.prestosql.metadata.Metadata;
 import io.prestosql.metadata.MetadataManager;
+import io.prestosql.metadata.MysqlCatalogStore;
 import io.prestosql.metadata.SchemaPropertyManager;
 import io.prestosql.metadata.SessionPropertyManager;
 import io.prestosql.metadata.StaticCatalogStore;
@@ -349,6 +351,8 @@ public class ServerMainModule
         binder.bind(PageSinkProvider.class).to(PageSinkManager.class).in(Scopes.SINGLETON);
 
         // metadata
+        binder.bind(CatalogStoreWrapper.class).in(Scopes.SINGLETON);
+        binder.bind(MysqlCatalogStore.class).in(Scopes.SINGLETON);
         binder.bind(StaticCatalogStore.class).in(Scopes.SINGLETON);
         configBinder(binder).bindConfig(StaticCatalogStoreConfig.class);
         binder.bind(MetadataManager.class).in(Scopes.SINGLETON);

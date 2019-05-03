@@ -346,6 +346,11 @@ public class AccessDeniedException
         throw new AccessDeniedException(format("Cannot set role %s", role));
     }
 
+    public static void denyUserAccess(String user)
+    {
+        throw new AccessDeniedException(format("Cannot set user %s", user));
+    }
+
     private static Object formatExtraInfo(String extraInfo)
     {
         if (extraInfo == null || extraInfo.isEmpty()) {

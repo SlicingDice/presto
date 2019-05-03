@@ -33,7 +33,7 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkState;
 import static io.prestosql.util.PropertiesUtil.loadProperties;
 
-public class StaticCatalogStore
+public class StaticCatalogStore implements CatalogStore
 {
     private static final Logger log = Logger.get(StaticCatalogStore.class);
     private final ConnectorManager connectorManager;
