@@ -136,6 +136,7 @@
         <module>presto-elasticsearch</module>
         <module>presto-csv</module>
         <module>presto-excel</module>
+        <module>presto-xml</module>
     </modules>
 
     <dependencyManagement>
@@ -151,12 +152,18 @@
                 <artifactId>presto-csv</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>io.prestosql</groupId>
                 <artifactId>presto-excel</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>io.prestosql</groupId>
+                <artifactId>presto-xml</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>io.prestosql</groupId>
