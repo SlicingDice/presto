@@ -137,7 +137,8 @@
         <module>presto-csv</module>
         <module>presto-excel</module>
         <module>presto-xml</module>
-        <module>presto-oracle-sales<module>
+        <module>presto-oracle-sales</module>
+        <module>presto-google-drive</module>
     </modules>
 
     <dependencyManagement>
@@ -170,7 +171,13 @@
                 <groupId>io.prestosql</groupId>
                 <artifactId>presto-oracle-sales</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+
             <dependency>
+                <groupId>io.prestosql</groupId>
+                <artifactId>presto-google-drive</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>io.prestosql</groupId>
