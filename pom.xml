@@ -137,6 +137,7 @@
         <module>presto-csv</module>
         <module>presto-excel</module>
         <module>presto-xml</module>
+        <module>presto-oracle-sales<module>
     </modules>
 
     <dependencyManagement>
@@ -164,6 +165,12 @@
                 <artifactId>presto-xml</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>io.prestosql</groupId>
+                <artifactId>presto-oracle-sales</artifactId>
+                <version>${project.version}</version>
+            <dependency>
 
             <dependency>
                 <groupId>io.prestosql</groupId>
