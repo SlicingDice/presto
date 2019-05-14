@@ -139,6 +139,7 @@
         <module>presto-xml</module>
         <module>presto-oracle-sales</module>
         <module>presto-google-drive</module>
+        <module>presto-access</module>
     </modules>
 
     <dependencyManagement>
@@ -176,6 +177,12 @@
             <dependency>
                 <groupId>io.prestosql</groupId>
                 <artifactId>presto-google-drive</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.prestosql</groupId>
+                <artifactId>presto-access</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
