@@ -13,6 +13,10 @@
  */
 package io.prestosql.plugin.jdbc;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.RemovalCause;
+import com.github.benmanes.caffeine.cache.RemovalListener;
 import com.google.common.base.CharMatcher;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -52,6 +56,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -101,6 +106,7 @@ public class BaseJdbcClient
         implements JdbcClient
 {
     private static final Logger log = Logger.get(BaseJdbcClient.class);
+    private LoadingCache<JdbcIdentity, Connection> connectionCache;
 
     private static final Map<Type, WriteMapping> WRITE_MAPPINGS = ImmutableMap.<Type, WriteMapping>builder()
             .put(BOOLEAN, WriteMapping.booleanMapping("boolean", booleanWriteFunction()))
@@ -131,12 +137,32 @@ public class BaseJdbcClient
                 .expireAfterWrite(config.getCaseInsensitiveNameMatchingCacheTtl().toMillis(), MILLISECONDS);
         this.remoteSchemaNames = remoteNamesCacheBuilder.build();
         this.remoteTableNames = remoteNamesCacheBuilder.build();
+
+        // Cache used to keep the connection alive during a single request
+        this.connectionCache = Caffeine.newBuilder()
+                .maximumSize(100)
+                .expireAfterAccess(1, TimeUnit.SECONDS) // 1 sec should be enough to distribute the connection
+                .removalListener(getRemovalListener())
+                .build(key -> connectionFactory.openConnection(key));
+    }
+
+    private RemovalListener<JdbcIdentity, Connection> getRemovalListener()
+    {
+        return (JdbcIdentity key, Connection connection, RemovalCause cause) -> {
+            try {
+                connection.close();
+            }
+            catch (SQLException e) {
+                throw new PrestoException(JDBC_ERROR, e);
+            }
+        };
     }
 
     @PreDestroy
     public void destroy()
             throws Exception
     {
+        connectionCache.invalidateAll();
         connectionFactory.close();
     }
 
@@ -174,7 +200,8 @@ public class BaseJdbcClient
     @Override
     public List<SchemaTableName> getTableNames(JdbcIdentity identity, Optional<String> schema)
     {
-        try (Connection connection = connectionFactory.openConnection(identity)) {
+        try {
+            Connection connection = connectionCache.get(identity);
             Optional<String> remoteSchema = schema.map(schemaName -> toRemoteSchemaName(identity, connection, schemaName));
             try (ResultSet resultSet = getTables(connection, remoteSchema, Optional.empty())) {
                 ImmutableList.Builder<SchemaTableName> list = ImmutableList.builder();
@@ -194,7 +221,8 @@ public class BaseJdbcClient
     @Override
     public Optional<JdbcTableHandle> getTableHandle(JdbcIdentity identity, SchemaTableName schemaTableName)
     {
-        try (Connection connection = connectionFactory.openConnection(identity)) {
+        try {
+            Connection connection = connectionCache.get(identity);
             String remoteSchema = toRemoteSchemaName(identity, connection, schemaTableName.getSchemaName());
             String remoteTable = toRemoteTableName(identity, connection, remoteSchema, schemaTableName.getTableName());
             try (ResultSet resultSet = getTables(connection, Optional.of(remoteSchema), Optional.of(remoteTable))) {
@@ -223,7 +251,8 @@ public class BaseJdbcClient
     @Override
     public List<JdbcColumnHandle> getColumns(ConnectorSession session, JdbcTableHandle tableHandle)
     {
-        try (Connection connection = connectionFactory.openConnection(JdbcIdentity.from(session))) {
+        try {
+            Connection connection = connectionCache.get(JdbcIdentity.from(session));
             try (ResultSet resultSet = getColumns(tableHandle, connection.getMetaData())) {
                 List<JdbcColumnHandle> columns = new ArrayList<>();
                 while (resultSet.next()) {
@@ -269,7 +298,7 @@ public class BaseJdbcClient
     public Connection getConnection(JdbcIdentity identity, JdbcSplit split)
             throws SQLException
     {
-        Connection connection = connectionFactory.openConnection(identity);
+        Connection connection = connectionCache.get(identity);
         try {
             connection.setReadOnly(true);
         }
@@ -545,7 +574,7 @@ public class BaseJdbcClient
     public Connection getConnection(JdbcIdentity identity, JdbcOutputTableHandle handle)
             throws SQLException
     {
-        return connectionFactory.openConnection(identity);
+        return connectionCache.get(identity);
     }
 
     @Override
