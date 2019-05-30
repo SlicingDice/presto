@@ -140,6 +140,7 @@
         <module>presto-oracle-sales</module>
         <module>presto-google-drive</module>
         <module>presto-access</module>
+        <module>presto-shannondb</module>
     </modules>
 
     <dependencyManagement>
@@ -183,6 +184,12 @@
             <dependency>
                 <groupId>io.prestosql</groupId>
                 <artifactId>presto-access</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.prestosql</groupId>
+                <artifactId>presto-shannondb</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
