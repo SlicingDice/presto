@@ -24,26 +24,26 @@ import javax.inject.Inject;
 
 import static java.util.Objects.requireNonNull;
 
-public class JdbcPageSinkProvider
+public class ShannonDBPageSinkProvider
         implements ConnectorPageSinkProvider
 {
-    private final JdbcClient jdbcClient;
+    private final ShannonDBClient shannonDBClient;
 
     @Inject
-    public JdbcPageSinkProvider(JdbcClient jdbcClient)
+    public ShannonDBPageSinkProvider(ShannonDBClient shannonDBClient)
     {
-        this.jdbcClient = requireNonNull(jdbcClient, "jdbcClient is null");
+        this.shannonDBClient = requireNonNull(shannonDBClient, "shannonDBClient is null");
     }
 
     @Override
     public ConnectorPageSink createPageSink(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorOutputTableHandle tableHandle)
     {
-        return new JdbcPageSink(session, (JdbcOutputTableHandle) tableHandle, jdbcClient);
+        return new ShannonDBPageSink(session, (ShannonDBOutputTableHandle) tableHandle, shannonDBClient);
     }
 
     @Override
     public ConnectorPageSink createPageSink(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorInsertTableHandle tableHandle)
     {
-        return new JdbcPageSink(session, (JdbcOutputTableHandle) tableHandle, jdbcClient);
+        return new ShannonDBPageSink(session, (ShannonDBOutputTableHandle) tableHandle, shannonDBClient);
     }
 }

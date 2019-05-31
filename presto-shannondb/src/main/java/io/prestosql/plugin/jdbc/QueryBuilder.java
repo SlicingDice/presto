@@ -25,9 +25,6 @@ import io.prestosql.spi.predicate.Range;
 import io.prestosql.spi.predicate.TupleDomain;
 import io.prestosql.spi.type.Type;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -83,10 +80,10 @@ public class QueryBuilder
         this.identifierQuote = requireNonNull(identifierQuote, "identifierQuote is null");
     }
 
-    public PreparedStatement buildSql(
-            JdbcClient client,
+    public ShannonDBPreparedStatement buildSql(
+            ShannonDBClient client,
             ConnectorSession session,
-            Connection connection,
+            ShannonDBSocketClient socketClient,
             String catalog,
             String schema,
             String table,
@@ -94,7 +91,7 @@ public class QueryBuilder
             TupleDomain<ColumnHandle> tupleDomain,
             Optional<String> additionalPredicate,
             Function<String, String> sqlFunction)
-            throws SQLException
+            throws Exception
     {
         StringBuilder sql = new StringBuilder();
 
@@ -133,7 +130,7 @@ public class QueryBuilder
         }
 
         String query = sqlFunction.apply(sql.toString());
-        PreparedStatement statement = client.getPreparedStatement(connection, query);
+        ShannonDBPreparedStatement statement = client.getShannonDBPreparedStatement(socketClient, query);
 
         for (int i = 0; i < accumulator.size(); i++) {
             TypeAndValue typeAndValue = accumulator.get(i);
@@ -167,14 +164,14 @@ public class QueryBuilder
         return statement;
     }
 
-    private static Domain pushDownDomain(JdbcClient client, ConnectorSession session, ShannonDBColumnHandle column, Domain domain)
+    private static Domain pushDownDomain(ShannonDBClient client, ConnectorSession session, ShannonDBColumnHandle column, Domain domain)
     {
         return client.toPrestoType(session, column.getShannonDBTypeHandle())
                 .orElseThrow(() -> new IllegalStateException(format("Unsupported type %s with handle %s", column.getColumnType(), column.getShannonDBTypeHandle())))
                 .getPushdownConverter().apply(domain);
     }
 
-    private List<String> toConjuncts(JdbcClient client, ConnectorSession session, List<ShannonDBColumnHandle> columns, TupleDomain<ColumnHandle> tupleDomain, List<TypeAndValue> accumulator)
+    private List<String> toConjuncts(ShannonDBClient client, ConnectorSession session, List<ShannonDBColumnHandle> columns, TupleDomain<ColumnHandle> tupleDomain, List<TypeAndValue> accumulator)
     {
         if (tupleDomain.isNone()) {
             return ImmutableList.of(ALWAYS_FALSE);

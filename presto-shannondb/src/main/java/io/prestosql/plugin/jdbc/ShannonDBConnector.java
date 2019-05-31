@@ -47,30 +47,30 @@ public class ShannonDBConnector
     private static final Logger log = Logger.get(ShannonDBConnector.class);
 
     private final LifeCycleManager lifeCycleManager;
-    private final JdbcMetadataFactory jdbcMetadataFactory;
-    private final JdbcSplitManager jdbcSplitManager;
-    private final JdbcRecordSetProvider jdbcRecordSetProvider;
-    private final JdbcPageSinkProvider jdbcPageSinkProvider;
+    private final ShannonDBMetadataFactory shannonDBMetadataFactory;
+    private final ShannonDBSplitManager shannonDBSplitManager;
+    private final ShannonDBRecordSetProvider shannonDBRecordSetProvider;
+    private final ShannonDBPageSinkProvider shannonDBPageSinkProvider;
     private final Optional<ConnectorAccessControl> accessControl;
     private final Set<Procedure> procedures;
 
-    private final ConcurrentMap<ConnectorTransactionHandle, JdbcMetadata> transactions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<ConnectorTransactionHandle, ShannonDBMetadata> transactions = new ConcurrentHashMap<>();
 
     @Inject
     public ShannonDBConnector(
             LifeCycleManager lifeCycleManager,
-            JdbcMetadataFactory jdbcMetadataFactory,
-            JdbcSplitManager jdbcSplitManager,
-            JdbcRecordSetProvider jdbcRecordSetProvider,
-            JdbcPageSinkProvider jdbcPageSinkProvider,
+            ShannonDBMetadataFactory shannonDBMetadataFactory,
+            ShannonDBSplitManager shannonDBSplitManager,
+            ShannonDBRecordSetProvider shannonDBRecordSetProvider,
+            ShannonDBPageSinkProvider shannonDBPageSinkProvider,
             Optional<ConnectorAccessControl> accessControl,
             Set<Procedure> procedures)
     {
         this.lifeCycleManager = requireNonNull(lifeCycleManager, "lifeCycleManager is null");
-        this.jdbcMetadataFactory = requireNonNull(jdbcMetadataFactory, "jdbcMetadataFactory is null");
-        this.jdbcSplitManager = requireNonNull(jdbcSplitManager, "jdbcSplitManager is null");
-        this.jdbcRecordSetProvider = requireNonNull(jdbcRecordSetProvider, "jdbcRecordSetProvider is null");
-        this.jdbcPageSinkProvider = requireNonNull(jdbcPageSinkProvider, "jdbcPageSinkProvider is null");
+        this.shannonDBMetadataFactory = requireNonNull(shannonDBMetadataFactory, "shannonDBMetadataFactory is null");
+        this.shannonDBSplitManager = requireNonNull(shannonDBSplitManager, "shannonDBSplitManager is null");
+        this.shannonDBRecordSetProvider = requireNonNull(shannonDBRecordSetProvider, "shannonDBRecordSetProvider is null");
+        this.shannonDBPageSinkProvider = requireNonNull(shannonDBPageSinkProvider, "shannonDBPageSinkProvider is null");
         this.accessControl = requireNonNull(accessControl, "accessControl is null");
         this.procedures = ImmutableSet.copyOf(requireNonNull(procedures, "procedures is null"));
     }
@@ -86,14 +86,14 @@ public class ShannonDBConnector
     {
         checkConnectorSupports(READ_COMMITTED, isolationLevel);
         ShannonDBTransactionHandle transaction = new ShannonDBTransactionHandle();
-        transactions.put(transaction, jdbcMetadataFactory.create());
+        transactions.put(transaction, shannonDBMetadataFactory.create());
         return transaction;
     }
 
     @Override
     public ConnectorMetadata getMetadata(ConnectorTransactionHandle transaction)
     {
-        JdbcMetadata metadata = transactions.get(transaction);
+        ShannonDBMetadata metadata = transactions.get(transaction);
         checkArgument(metadata != null, "no such transaction: %s", transaction);
         return metadata;
     }
@@ -107,7 +107,7 @@ public class ShannonDBConnector
     @Override
     public void rollback(ConnectorTransactionHandle transaction)
     {
-        JdbcMetadata metadata = transactions.remove(transaction);
+        ShannonDBMetadata metadata = transactions.remove(transaction);
         checkArgument(metadata != null, "no such transaction: %s", transaction);
         metadata.rollback();
     }
@@ -115,19 +115,19 @@ public class ShannonDBConnector
     @Override
     public ConnectorSplitManager getSplitManager()
     {
-        return jdbcSplitManager;
+        return shannonDBSplitManager;
     }
 
     @Override
     public ConnectorRecordSetProvider getRecordSetProvider()
     {
-        return jdbcRecordSetProvider;
+        return shannonDBRecordSetProvider;
     }
 
     @Override
     public ConnectorPageSinkProvider getPageSinkProvider()
     {
-        return jdbcPageSinkProvider;
+        return shannonDBPageSinkProvider;
     }
 
     @Override

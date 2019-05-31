@@ -23,7 +23,7 @@ import javax.validation.constraints.NotNull;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
-public class BaseJdbcConfig
+public class BaseShannonDBConfig
 {
     private String connectionUrl;
     private String connectionUser;
@@ -40,7 +40,7 @@ public class BaseJdbcConfig
     }
 
     @Config("connection-url")
-    public BaseJdbcConfig setConnectionUrl(String connectionUrl)
+    public BaseShannonDBConfig setConnectionUrl(String connectionUrl)
     {
         this.connectionUrl = connectionUrl;
         return this;
@@ -53,7 +53,7 @@ public class BaseJdbcConfig
     }
 
     @Config("connection-user")
-    public BaseJdbcConfig setConnectionUser(String connectionUser)
+    public BaseShannonDBConfig setConnectionUser(String connectionUser)
     {
         this.connectionUser = connectionUser;
         return this;
@@ -67,7 +67,7 @@ public class BaseJdbcConfig
 
     @Config("connection-password")
     @ConfigSecuritySensitive
-    public BaseJdbcConfig setConnectionPassword(String connectionPassword)
+    public BaseShannonDBConfig setConnectionPassword(String connectionPassword)
     {
         this.connectionPassword = connectionPassword;
         return this;
@@ -80,7 +80,7 @@ public class BaseJdbcConfig
     }
 
     @Config("user-credential-name")
-    public BaseJdbcConfig setUserCredentialName(String userCredentialName)
+    public BaseShannonDBConfig setUserCredentialName(String userCredentialName)
     {
         this.userCredentialName = userCredentialName;
         return this;
@@ -93,7 +93,7 @@ public class BaseJdbcConfig
     }
 
     @Config("password-credential-name")
-    public BaseJdbcConfig setPasswordCredentialName(String passwordCredentialName)
+    public BaseShannonDBConfig setPasswordCredentialName(String passwordCredentialName)
     {
         this.passwordCredentialName = passwordCredentialName;
         return this;
@@ -105,7 +105,7 @@ public class BaseJdbcConfig
     }
 
     @Config("case-insensitive-name-matching")
-    public BaseJdbcConfig setCaseInsensitiveNameMatching(boolean caseInsensitiveNameMatching)
+    public BaseShannonDBConfig setCaseInsensitiveNameMatching(boolean caseInsensitiveNameMatching)
     {
         this.caseInsensitiveNameMatching = caseInsensitiveNameMatching;
         return this;
@@ -119,7 +119,7 @@ public class BaseJdbcConfig
     }
 
     @Config("case-insensitive-name-matching.cache-ttl")
-    public BaseJdbcConfig setCaseInsensitiveNameMatchingCacheTtl(Duration caseInsensitiveNameMatchingCacheTtl)
+    public BaseShannonDBConfig setCaseInsensitiveNameMatchingCacheTtl(Duration caseInsensitiveNameMatchingCacheTtl)
     {
         this.caseInsensitiveNameMatchingCacheTtl = caseInsensitiveNameMatchingCacheTtl;
         return this;

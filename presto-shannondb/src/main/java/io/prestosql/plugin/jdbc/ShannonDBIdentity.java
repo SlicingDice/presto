@@ -22,17 +22,17 @@ import java.util.Objects;
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
-public class JdbcIdentity
+public class ShannonDBIdentity
 {
-    public static JdbcIdentity from(ConnectorSession session)
+    public static ShannonDBIdentity from(ConnectorSession session)
     {
-        return new JdbcIdentity(session.getIdentity().getUser(), session.getIdentity().getExtraCredentials());
+        return new ShannonDBIdentity(session.getIdentity().getUser(), session.getIdentity().getExtraCredentials());
     }
 
     private final String user;
     private final Map<String, String> extraCredentials;
 
-    public JdbcIdentity(String user, Map<String, String> extraCredentials)
+    public ShannonDBIdentity(String user, Map<String, String> extraCredentials)
     {
         this.user = requireNonNull(user, "user is null");
         this.extraCredentials = ImmutableMap.copyOf(requireNonNull(extraCredentials, "extraCredentials is null"));
@@ -57,7 +57,7 @@ public class JdbcIdentity
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        JdbcIdentity that = (JdbcIdentity) o;
+        ShannonDBIdentity that = (ShannonDBIdentity) o;
         return Objects.equals(user, that.user) &&
                 Objects.equals(extraCredentials, that.extraCredentials);
     }

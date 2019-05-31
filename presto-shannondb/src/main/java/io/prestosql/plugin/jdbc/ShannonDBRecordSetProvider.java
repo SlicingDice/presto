@@ -28,21 +28,21 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
-public class JdbcRecordSetProvider
+public class ShannonDBRecordSetProvider
         implements ConnectorRecordSetProvider
 {
-    private final JdbcClient jdbcClient;
+    private final ShannonDBClient shannonDBClient;
 
     @Inject
-    public JdbcRecordSetProvider(JdbcClient jdbcClient)
+    public ShannonDBRecordSetProvider(ShannonDBClient shannonDBClient)
     {
-        this.jdbcClient = requireNonNull(jdbcClient, "jdbcClient is null");
+        this.shannonDBClient = requireNonNull(shannonDBClient, "shannonDBClient is null");
     }
 
     @Override
     public RecordSet getRecordSet(ConnectorTransactionHandle transaction, ConnectorSession session, ConnectorSplit split, ConnectorTableHandle table, List<? extends ColumnHandle> columns)
     {
-        JdbcSplit jdbcSplit = (JdbcSplit) split;
+        ShannonDBSplit shannonDBSplit = (ShannonDBSplit) split;
         ShannonDBTableHandle jdbcTable = (ShannonDBTableHandle) table;
 
         ImmutableList.Builder<ShannonDBColumnHandle> handles = ImmutableList.builder();
@@ -50,6 +50,6 @@ public class JdbcRecordSetProvider
             handles.add((ShannonDBColumnHandle) handle);
         }
 
-        return new JdbcRecordSet(jdbcClient, session, jdbcSplit, jdbcTable, handles.build());
+        return new ShannonDBRecordSet(shannonDBClient, session, shannonDBSplit, jdbcTable, handles.build());
     }
 }

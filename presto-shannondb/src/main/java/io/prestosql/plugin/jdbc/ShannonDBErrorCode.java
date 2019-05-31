@@ -19,7 +19,7 @@ import io.prestosql.spi.ErrorType;
 
 import static io.prestosql.spi.ErrorType.EXTERNAL;
 
-public enum JdbcErrorCode
+public enum ShannonDBErrorCode
         implements ErrorCodeSupplier
 {
     JDBC_ERROR(0, EXTERNAL),
@@ -27,7 +27,7 @@ public enum JdbcErrorCode
 
     private final ErrorCode errorCode;
 
-    JdbcErrorCode(int code, ErrorType type)
+    ShannonDBErrorCode(int code, ErrorType type)
     {
         errorCode = new ErrorCode(code + 0x0400_0000, name(), type);
     }

@@ -27,6 +27,6 @@ public interface SliceWriteFunction
         return Slice.class;
     }
 
-    void set(PreparedStatement statement, int index, Slice value)
+    void set(ShannonDBPreparedStatement statement, int index, Slice value)
             throws SQLException;
 }

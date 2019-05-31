@@ -20,16 +20,16 @@ import static java.util.Objects.requireNonNull;
 
 final class RemoteTableNameCacheKey
 {
-    private final JdbcIdentity identity;
+    private final ShannonDBIdentity identity;
     private final String schema;
 
-    RemoteTableNameCacheKey(JdbcIdentity identity, String schema)
+    RemoteTableNameCacheKey(ShannonDBIdentity identity, String schema)
     {
         this.identity = requireNonNull(identity, "identity is null");
         this.schema = requireNonNull(schema, "schema is null");
     }
 
-    JdbcIdentity getIdentity()
+    ShannonDBIdentity getIdentity()
     {
         return identity;
     }

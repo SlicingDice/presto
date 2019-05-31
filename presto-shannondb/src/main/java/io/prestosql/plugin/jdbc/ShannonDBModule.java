@@ -23,7 +23,7 @@ import static com.google.inject.multibindings.Multibinder.newSetBinder;
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 
-public class JdbcModule
+public class ShannonDBModule
         implements Module
 {
     @Override
@@ -31,11 +31,11 @@ public class JdbcModule
     {
         newOptionalBinder(binder, ConnectorAccessControl.class);
         newSetBinder(binder, Procedure.class);
-        binder.bind(JdbcMetadataFactory.class).in(Scopes.SINGLETON);
-        binder.bind(JdbcSplitManager.class).in(Scopes.SINGLETON);
-        binder.bind(JdbcRecordSetProvider.class).in(Scopes.SINGLETON);
-        binder.bind(JdbcPageSinkProvider.class).in(Scopes.SINGLETON);
+        binder.bind(ShannonDBMetadataFactory.class).in(Scopes.SINGLETON);
+        binder.bind(ShannonDBSplitManager.class).in(Scopes.SINGLETON);
+        binder.bind(ShannonDBRecordSetProvider.class).in(Scopes.SINGLETON);
+        binder.bind(ShannonDBPageSinkProvider.class).in(Scopes.SINGLETON);
         binder.bind(ShannonDBConnector.class).in(Scopes.SINGLETON);
-        configBinder(binder).bindConfig(JdbcMetadataConfig.class);
+        configBinder(binder).bindConfig(ShannonDBMetadataConfig.class);
     }
 }

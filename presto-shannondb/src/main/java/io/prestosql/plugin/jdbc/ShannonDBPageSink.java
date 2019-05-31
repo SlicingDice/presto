@@ -25,7 +25,6 @@ import io.prestosql.spi.type.Type;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.sql.SQLNonTransientException;
 import java.util.Collection;
 import java.util.List;
@@ -33,35 +32,35 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static io.prestosql.plugin.jdbc.JdbcErrorCode.JDBC_ERROR;
-import static io.prestosql.plugin.jdbc.JdbcErrorCode.JDBC_NON_TRANSIENT_ERROR;
+import static io.prestosql.plugin.jdbc.ShannonDBErrorCode.JDBC_ERROR;
+import static io.prestosql.plugin.jdbc.ShannonDBErrorCode.JDBC_NON_TRANSIENT_ERROR;
 import static java.lang.String.format;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
-public class JdbcPageSink
+public class ShannonDBPageSink
         implements ConnectorPageSink
 {
-    private final Connection connection;
-    private final PreparedStatement statement;
+    private final ShannonDBSocketClient connection;
+    private final ShannonDBPreparedStatement statement;
 
     private final List<Type> columnTypes;
     private final List<WriteFunction> columnWriters;
     private int batchSize;
 
-    public JdbcPageSink(ConnectorSession session, JdbcOutputTableHandle handle, JdbcClient jdbcClient)
+    public ShannonDBPageSink(ConnectorSession session, ShannonDBOutputTableHandle handle, ShannonDBClient shannonDBClient)
     {
         try {
-            connection = jdbcClient.getConnection(JdbcIdentity.from(session), handle);
+            connection = shannonDBClient.getShannonDBSocketClient(ShannonDBIdentity.from(session), handle);
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             throw new PrestoException(JDBC_ERROR, e);
         }
 
         try {
             connection.setAutoCommit(false);
-            statement = connection.prepareStatement(jdbcClient.buildInsertSql(handle));
+            statement = connection.prepareStatement(shannonDBClient.buildInsertSql(handle));
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             closeWithSuppression(connection, e);
             throw new PrestoException(JDBC_ERROR, e);
         }
@@ -70,7 +69,7 @@ public class JdbcPageSink
 
         columnWriters = columnTypes.stream()
                 .map(type -> {
-                    WriteFunction writeFunction = jdbcClient.toWriteMapping(session, type).getWriteFunction();
+                    WriteFunction writeFunction = shannonDBClient.toWriteMapping(session, type).getWriteFunction();
                     verify(
                             type.getJavaType() == writeFunction.getJavaType(),
                             "Presto type %s is not compatible with write function %s accepting %s",
@@ -102,14 +101,14 @@ public class JdbcPageSink
                 }
             }
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             throw new PrestoException(JDBC_ERROR, e);
         }
         return NOT_BLOCKED;
     }
 
     private void appendColumn(Page page, int position, int channel)
-            throws SQLException
+            throws Exception
     {
         Block block = page.getBlock(channel);
         int parameterIndex = channel + 1;
@@ -146,8 +145,8 @@ public class JdbcPageSink
     public CompletableFuture<Collection<Slice>> finish()
     {
         // commit and close
-        try (Connection connection = this.connection;
-                PreparedStatement statement = this.statement) {
+        try (ShannonDBSocketClient connection = this.connection;
+                ShannonDBPreparedStatement statement = this.statement) {
             if (batchSize > 0) {
                 statement.executeBatch();
                 connection.commit();
@@ -156,7 +155,7 @@ public class JdbcPageSink
         catch (SQLNonTransientException e) {
             throw new PrestoException(JDBC_NON_TRANSIENT_ERROR, e);
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             throw new PrestoException(JDBC_ERROR, e);
         }
         // the committer does not need any additional info
@@ -168,20 +167,20 @@ public class JdbcPageSink
     public void abort()
     {
         // rollback and close
-        try (Connection connection = this.connection;
-                PreparedStatement statement = this.statement) {
+        try (ShannonDBSocketClient connection = this.connection;
+                ShannonDBPreparedStatement statement = this.statement) {
             // skip rollback if implicitly closed due to an error
             if (!connection.isClosed()) {
                 connection.rollback();
             }
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             throw new PrestoException(JDBC_ERROR, e);
         }
     }
 
     @SuppressWarnings("ObjectEquality")
-    private static void closeWithSuppression(Connection connection, Throwable throwable)
+    private static void closeWithSuppression(ShannonDBSocketClient connection, Throwable throwable)
     {
         try {
             connection.close();

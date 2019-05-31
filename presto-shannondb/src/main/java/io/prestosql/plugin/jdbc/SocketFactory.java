@@ -13,23 +13,17 @@
  */
 package io.prestosql.plugin.jdbc;
 
-import io.airlift.configuration.Config;
-import io.airlift.configuration.ConfigDescription;
+import java.net.Socket;
 
-public class JdbcMetadataConfig
+@FunctionalInterface
+public interface SocketFactory
+        extends AutoCloseable
 {
-    private boolean allowDropTable;
+    ShannonDBSocketClient openSocket(ShannonDBIdentity identity)
+            throws Exception;
 
-    public boolean isAllowDropTable()
-    {
-        return allowDropTable;
-    }
-
-    @Config("allow-drop-table")
-    @ConfigDescription("Allow connector to drop tables")
-    public JdbcMetadataConfig setAllowDropTable(boolean allowDropTable)
-    {
-        this.allowDropTable = allowDropTable;
-        return this;
-    }
+    @Override
+    default void close()
+            throws Exception
+    {}
 }

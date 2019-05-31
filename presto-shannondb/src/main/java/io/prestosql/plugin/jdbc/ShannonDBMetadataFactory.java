@@ -17,21 +17,21 @@ import javax.inject.Inject;
 
 import static java.util.Objects.requireNonNull;
 
-public class JdbcMetadataFactory
+public class ShannonDBMetadataFactory
 {
-    private final JdbcClient jdbcClient;
+    private final ShannonDBClient shannonDBClient;
     private final boolean allowDropTable;
 
     @Inject
-    public JdbcMetadataFactory(JdbcClient jdbcClient, JdbcMetadataConfig config)
+    public ShannonDBMetadataFactory(ShannonDBClient shannonDBClient, ShannonDBMetadataConfig config)
     {
-        this.jdbcClient = requireNonNull(jdbcClient, "jdbcClient is null");
+        this.shannonDBClient = requireNonNull(shannonDBClient, "shannonDBClient is null");
         requireNonNull(config, "config is null");
         this.allowDropTable = config.isAllowDropTable();
     }
 
-    public JdbcMetadata create()
+    public ShannonDBMetadata create()
     {
-        return new JdbcMetadata(jdbcClient, allowDropTable);
+        return new ShannonDBMetadata(shannonDBClient, allowDropTable);
     }
 }
