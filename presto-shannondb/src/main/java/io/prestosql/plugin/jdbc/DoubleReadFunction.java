@@ -26,6 +26,6 @@ public interface DoubleReadFunction
         return double.class;
     }
 
-    double readDouble(ResultSet resultSet, int columnIndex)
+    double readDouble(ShannonDBResultSet resultSet, int columnIndex)
             throws SQLException;
 }

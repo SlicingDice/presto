@@ -22,11 +22,6 @@ import io.prestosql.spi.connector.ConnectorSession;
 import io.prestosql.spi.connector.RecordCursor;
 import io.prestosql.spi.type.Type;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -50,7 +45,7 @@ public class ShannonDBRecordCursor
     private final ShannonDBClient shannonDBClient;
     private final ShannonDBSocketClient connection;
     private final ShannonDBPreparedStatement statement;
-    private final ResultSet resultSet;
+    private final ShannonDBResultSet resultSet;
     private boolean closed;
 
     public ShannonDBRecordCursor(ShannonDBClient shannonDBClient, ConnectorSession session, ShannonDBSplit split, ShannonDBTableHandle table, List<ShannonDBColumnHandle> columnHandles)
@@ -130,7 +125,7 @@ public class ShannonDBRecordCursor
         try {
             return resultSet.next();
         }
-        catch (SQLException | RuntimeException e) {
+        catch (Exception e) {
             throw handleSqlException(e);
         }
     }
@@ -142,7 +137,7 @@ public class ShannonDBRecordCursor
         try {
             return booleanReadFunctions[field].readBoolean(resultSet, field + 1);
         }
-        catch (SQLException | RuntimeException e) {
+        catch (Exception e) {
             throw handleSqlException(e);
         }
     }
@@ -154,7 +149,7 @@ public class ShannonDBRecordCursor
         try {
             return longReadFunctions[field].readLong(resultSet, field + 1);
         }
-        catch (SQLException | RuntimeException e) {
+        catch (Exception e) {
             throw handleSqlException(e);
         }
     }
@@ -166,7 +161,7 @@ public class ShannonDBRecordCursor
         try {
             return doubleReadFunctions[field].readDouble(resultSet, field + 1);
         }
-        catch (SQLException | RuntimeException e) {
+        catch (Exception e) {
             throw handleSqlException(e);
         }
     }
@@ -178,7 +173,7 @@ public class ShannonDBRecordCursor
         try {
             return sliceReadFunctions[field].readSlice(resultSet, field + 1);
         }
-        catch (SQLException | RuntimeException e) {
+        catch (Exception e) {
             throw handleSqlException(e);
         }
     }
@@ -190,7 +185,7 @@ public class ShannonDBRecordCursor
         try {
             return blockReadFunctions[field].readBlock(resultSet, field + 1);
         }
-        catch (SQLException | RuntimeException e) {
+        catch (Exception e) {
             throw handleSqlException(e);
         }
     }
@@ -202,14 +197,9 @@ public class ShannonDBRecordCursor
         checkArgument(field < columnHandles.length, "Invalid field index");
 
         try {
-            // JDBC is kind of dumb: we need to read the field and then ask
-            // if it was null, which means we are wasting effort here.
-            // We could save the result of the field access if it matters.
-            resultSet.getObject(field + 1);
-
-            return resultSet.wasNull();
+            return resultSet.wasNull(field);
         }
-        catch (SQLException | RuntimeException e) {
+        catch (Exception e) {
             throw handleSqlException(e);
         }
     }
@@ -226,7 +216,7 @@ public class ShannonDBRecordCursor
         // use try with resources to close everything properly
         try (ShannonDBSocketClient connection = this.connection;
                 ShannonDBPreparedStatement statement = this.statement;
-                ResultSet resultSet = this.resultSet) {
+                ShannonDBResultSet resultSet = this.resultSet) {
             if (connection != null) {
                 shannonDBClient.abortReadConnection(connection);
             }

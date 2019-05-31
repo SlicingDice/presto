@@ -28,6 +28,6 @@ public interface SliceReadFunction
         return Slice.class;
     }
 
-    Slice readSlice(ResultSet resultSet, int columnIndex)
+    Slice readSlice(ShannonDBResultSet resultSet, int columnIndex)
             throws SQLException;
 }
