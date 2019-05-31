@@ -13,8 +13,7 @@
  */
 package io.prestosql.plugin.jdbc;
 
-import java.sql.Connection;
-import java.sql.Driver;
+import java.net.Socket;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Optional;
@@ -23,26 +22,26 @@ import java.util.Properties;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
-public class DriverConnectionFactory
-        implements ConnectionFactory
+public class ShannonDBSocketClientSocketFactory
+        implements SocketFactory
 {
-    private final Driver driver;
+    private final ShannonDBSocketClient shannonDBSocketClient;
     private final String connectionUrl;
     private final Properties connectionProperties;
     private final Optional<String> userCredentialName;
     private final Optional<String> passwordCredentialName;
 
-    public DriverConnectionFactory(Driver driver, BaseJdbcConfig config)
+    public ShannonDBSocketClientSocketFactory(ShannonDBSocketClient shannonDBSocketClient, BaseShannonDBConfig config)
     {
         this(
-                driver,
+                shannonDBSocketClient,
                 config.getConnectionUrl(),
                 Optional.ofNullable(config.getUserCredentialName()),
                 Optional.ofNullable(config.getPasswordCredentialName()),
                 basicConnectionProperties(config));
     }
 
-    public static Properties basicConnectionProperties(BaseJdbcConfig config)
+    public static Properties basicConnectionProperties(BaseShannonDBConfig config)
     {
         Properties connectionProperties = new Properties();
         if (config.getConnectionUser() != null) {
@@ -54,9 +53,9 @@ public class DriverConnectionFactory
         return connectionProperties;
     }
 
-    public DriverConnectionFactory(Driver driver, String connectionUrl, Optional<String> userCredentialName, Optional<String> passwordCredentialName, Properties connectionProperties)
+    public ShannonDBSocketClientSocketFactory(ShannonDBSocketClient shannonDBSocketClient, String connectionUrl, Optional<String> userCredentialName, Optional<String> passwordCredentialName, Properties connectionProperties)
     {
-        this.driver = requireNonNull(driver, "driver is null");
+        this.shannonDBSocketClient = requireNonNull(shannonDBSocketClient, "shannonDBSocketClient is null");
         this.connectionUrl = requireNonNull(connectionUrl, "connectionUrl is null");
         this.connectionProperties = new Properties();
         this.connectionProperties.putAll(requireNonNull(connectionProperties, "basicConnectionProperties is null"));
@@ -65,15 +64,15 @@ public class DriverConnectionFactory
     }
 
     @Override
-    public Connection openConnection(JdbcIdentity identity)
+    public ShannonDBSocketClient openSocket(ShannonDBIdentity identity)
             throws SQLException
     {
         userCredentialName.ifPresent(credentialName -> setConnectionProperty(connectionProperties, identity.getExtraCredentials(), credentialName, "user"));
         passwordCredentialName.ifPresent(credentialName -> setConnectionProperty(connectionProperties, identity.getExtraCredentials(), credentialName, "password"));
 
-        Connection connection = driver.connect(connectionUrl, connectionProperties);
-        checkState(connection != null, "Driver returned null connection");
-        return connection;
+        ShannonDBSocketClient socket = shannonDBSocketClient.connect(connectionUrl, connectionProperties);
+        checkState(socket != null, "ShannonDBSocketClient returned null connection");
+        return socket;
     }
 
     private static void setConnectionProperty(Properties connectionProperties, Map<String, String> extraCredentials, String credentialName, String propertyName)

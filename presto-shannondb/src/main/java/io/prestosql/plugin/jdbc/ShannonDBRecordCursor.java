@@ -31,14 +31,14 @@ import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static io.prestosql.plugin.jdbc.JdbcErrorCode.JDBC_ERROR;
+import static io.prestosql.plugin.jdbc.ShannonDBErrorCode.JDBC_ERROR;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
-public class JdbcRecordCursor
+public class ShannonDBRecordCursor
         implements RecordCursor
 {
-    private static final Logger log = Logger.get(JdbcRecordCursor.class);
+    private static final Logger log = Logger.get(ShannonDBRecordCursor.class);
 
     private final ShannonDBColumnHandle[] columnHandles;
     private final BooleanReadFunction[] booleanReadFunctions;
@@ -47,15 +47,15 @@ public class JdbcRecordCursor
     private final SliceReadFunction[] sliceReadFunctions;
     private final BlockReadFunction[] blockReadFunctions;
 
-    private final JdbcClient jdbcClient;
-    private final Connection connection;
-    private final PreparedStatement statement;
+    private final ShannonDBClient shannonDBClient;
+    private final ShannonDBSocketClient connection;
+    private final ShannonDBPreparedStatement statement;
     private final ResultSet resultSet;
     private boolean closed;
 
-    public JdbcRecordCursor(JdbcClient jdbcClient, ConnectorSession session, JdbcSplit split, ShannonDBTableHandle table, List<ShannonDBColumnHandle> columnHandles)
+    public ShannonDBRecordCursor(ShannonDBClient shannonDBClient, ConnectorSession session, ShannonDBSplit split, ShannonDBTableHandle table, List<ShannonDBColumnHandle> columnHandles)
     {
-        this.jdbcClient = requireNonNull(jdbcClient, "jdbcClient is null");
+        this.shannonDBClient = requireNonNull(shannonDBClient, "shannonDBClient is null");
 
         this.columnHandles = columnHandles.toArray(new ShannonDBColumnHandle[0]);
 
@@ -66,7 +66,7 @@ public class JdbcRecordCursor
         blockReadFunctions = new BlockReadFunction[columnHandles.size()];
 
         for (int i = 0; i < this.columnHandles.length; i++) {
-            ColumnMapping columnMapping = jdbcClient.toPrestoType(session, columnHandles.get(i).getShannonDBTypeHandle())
+            ColumnMapping columnMapping = shannonDBClient.toPrestoType(session, columnHandles.get(i).getShannonDBTypeHandle())
                     .orElseThrow(() -> new VerifyException("Unsupported column type"));
             Class<?> javaType = columnMapping.getType().getJavaType();
             ReadFunction readFunction = columnMapping.getReadFunction();
@@ -92,12 +92,12 @@ public class JdbcRecordCursor
         }
 
         try {
-            connection = jdbcClient.getConnection(JdbcIdentity.from(session), split);
-            statement = jdbcClient.buildSql(session, connection, split, table, columnHandles);
+            connection = shannonDBClient.getShannonDBSocketClient(ShannonDBIdentity.from(session), split);
+            statement = shannonDBClient.buildSql(session, connection, split, table, columnHandles);
             log.debug("Executing: %s", statement.toString());
             resultSet = statement.executeQuery();
         }
-        catch (SQLException | RuntimeException e) {
+        catch (Exception e) {
             throw handleSqlException(e);
         }
     }
@@ -224,14 +224,14 @@ public class JdbcRecordCursor
         closed = true;
 
         // use try with resources to close everything properly
-        try (Connection connection = this.connection;
-                Statement statement = this.statement;
+        try (ShannonDBSocketClient connection = this.connection;
+                ShannonDBPreparedStatement statement = this.statement;
                 ResultSet resultSet = this.resultSet) {
             if (connection != null) {
-                jdbcClient.abortReadConnection(connection);
+                shannonDBClient.abortReadConnection(connection);
             }
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             // ignore exception from close
         }
     }

@@ -25,6 +25,6 @@ public interface BooleanWriteFunction
         return boolean.class;
     }
 
-    void set(PreparedStatement statement, int index, boolean value)
+    void set(ShannonDBPreparedStatement statement, int index, boolean value)
             throws SQLException;
 }

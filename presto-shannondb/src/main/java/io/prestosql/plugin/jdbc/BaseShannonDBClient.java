@@ -13,10 +13,6 @@
  */
 package io.prestosql.plugin.jdbc;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.github.benmanes.caffeine.cache.RemovalCause;
-import com.github.benmanes.caffeine.cache.RemovalListener;
 import com.google.common.base.CharMatcher;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -42,12 +38,6 @@ import io.prestosql.spi.type.VarcharType;
 
 import javax.annotation.PreDestroy;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -56,7 +46,6 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -67,7 +56,7 @@ import static com.google.common.base.Verify.verify;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.getOnlyElement;
-import static io.prestosql.plugin.jdbc.JdbcErrorCode.JDBC_ERROR;
+import static io.prestosql.plugin.jdbc.ShannonDBErrorCode.JDBC_ERROR;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.bigintWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.booleanWriteFunction;
 import static io.prestosql.plugin.jdbc.StandardColumnMappings.charWriteFunction;
@@ -102,11 +91,10 @@ import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-public class BaseJdbcClient
-        implements JdbcClient
+public class BaseShannonDBClient
+        implements ShannonDBClient
 {
-    private static final Logger log = Logger.get(BaseJdbcClient.class);
-    private LoadingCache<JdbcIdentity, Connection> connectionCache;
+    private static final Logger log = Logger.get(BaseShannonDBClient.class);
 
     private static final Map<Type, WriteMapping> WRITE_MAPPINGS = ImmutableMap.<Type, WriteMapping>builder()
             .put(BOOLEAN, WriteMapping.booleanMapping("boolean", booleanWriteFunction()))
@@ -120,68 +108,48 @@ public class BaseJdbcClient
             .put(DATE, WriteMapping.longMapping("date", dateWriteFunction()))
             .build();
 
-    protected final ConnectionFactory connectionFactory;
+    protected final SocketFactory shannonDBSocketClientFactory;
     protected final String identifierQuote;
     protected final boolean caseInsensitiveNameMatching;
-    protected final Cache<JdbcIdentity, Map<String, String>> remoteSchemaNames;
+    protected final Cache<ShannonDBIdentity, Map<String, String>> remoteSchemaNames;
     protected final Cache<RemoteTableNameCacheKey, Map<String, String>> remoteTableNames;
 
-    public BaseJdbcClient(BaseJdbcConfig config, String identifierQuote, ConnectionFactory connectionFactory)
+    public BaseShannonDBClient(BaseShannonDBConfig config, String identifierQuote, SocketFactory socketFactory)
     {
         requireNonNull(config, "config is null"); // currently unused, retained as parameter for future extensions
         this.identifierQuote = requireNonNull(identifierQuote, "identifierQuote is null");
-        this.connectionFactory = requireNonNull(connectionFactory, "connectionFactory is null");
+        this.shannonDBSocketClientFactory = requireNonNull(socketFactory, "socketFactory is null");
 
         this.caseInsensitiveNameMatching = config.isCaseInsensitiveNameMatching();
         CacheBuilder<Object, Object> remoteNamesCacheBuilder = CacheBuilder.newBuilder()
                 .expireAfterWrite(config.getCaseInsensitiveNameMatchingCacheTtl().toMillis(), MILLISECONDS);
         this.remoteSchemaNames = remoteNamesCacheBuilder.build();
         this.remoteTableNames = remoteNamesCacheBuilder.build();
-
-        // Cache used to keep the connection alive during a single request
-        this.connectionCache = Caffeine.newBuilder()
-                .maximumSize(100)
-                .expireAfterAccess(1, TimeUnit.SECONDS) // 1 sec should be enough to distribute the connection
-                .removalListener(getRemovalListener())
-                .build(key -> connectionFactory.openConnection(key));
-    }
-
-    private RemovalListener<JdbcIdentity, Connection> getRemovalListener()
-    {
-        return (JdbcIdentity key, Connection connection, RemovalCause cause) -> {
-            try {
-                connection.close();
-            }
-            catch (SQLException e) {
-                e.printStackTrace();
-            }
-        };
     }
 
     @PreDestroy
     public void destroy()
             throws Exception
     {
-        connectionCache.invalidateAll();
-        connectionFactory.close();
+        shannonDBSocketClientFactory.close();
     }
 
     @Override
-    public final Set<String> getSchemaNames(JdbcIdentity identity)
+    public final Set<String> getSchemaNames(ShannonDBIdentity identity)
     {
-        try (Connection connection = connectionFactory.openConnection(identity)) {
-            return listSchemas(connection).stream()
+        try (ShannonDBSocketClient shannonDBSocketClient = shannonDBSocketClientFactory.openSocket(identity)) {
+            return listSchemas(shannonDBSocketClient).stream()
                     .map(schemaName -> schemaName.toLowerCase(ENGLISH))
                     .collect(toImmutableSet());
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             throw new PrestoException(JDBC_ERROR, e);
         }
     }
 
-    protected Collection<String> listSchemas(Connection connection)
+    protected Collection<String> listSchemas(ShannonDBSocketClient shannonDBSocketClient)
     {
-        try (ResultSet resultSet = connection.getMetaData().getSchemas()) {
+        try (ShannonDBResultSet resultSet = shannonDBSocketClient.getSchemas()) {
             ImmutableSet.Builder<String> schemaNames = ImmutableSet.builder();
             while (resultSet.next()) {
                 String schemaName = resultSet.getString("TABLE_SCHEM");
@@ -192,18 +160,17 @@ public class BaseJdbcClient
             }
             return schemaNames.build();
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             throw new PrestoException(JDBC_ERROR, e);
         }
     }
 
     @Override
-    public List<SchemaTableName> getTableNames(JdbcIdentity identity, Optional<String> schema)
+    public List<SchemaTableName> getTableNames(ShannonDBIdentity identity, Optional<String> schema)
     {
-        try {
-            Connection connection = connectionCache.get(identity);
-            Optional<String> remoteSchema = schema.map(schemaName -> toRemoteSchemaName(identity, connection, schemaName));
-            try (ResultSet resultSet = getTables(connection, remoteSchema, Optional.empty())) {
+        try (ShannonDBSocketClient shannonDBSocketClient = shannonDBSocketClientFactory.openSocket(identity)) {
+            Optional<String> remoteSchema = schema.map(schemaName -> toRemoteSchemaName(identity, shannonDBSocketClient, schemaName));
+            try (ShannonDBResultSet resultSet = getTables(shannonDBSocketClient, remoteSchema, Optional.empty())) {
                 ImmutableList.Builder<SchemaTableName> list = ImmutableList.builder();
                 while (resultSet.next()) {
                     String tableSchema = getTableSchemaName(resultSet);
@@ -213,19 +180,18 @@ public class BaseJdbcClient
                 return list.build();
             }
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             throw new PrestoException(JDBC_ERROR, e);
         }
     }
 
     @Override
-    public Optional<ShannonDBTableHandle> getTableHandle(JdbcIdentity identity, SchemaTableName schemaTableName)
+    public Optional<ShannonDBTableHandle> getTableHandle(ShannonDBIdentity identity, SchemaTableName schemaTableName)
     {
-        try {
-            Connection connection = connectionCache.get(identity);
-            String remoteSchema = toRemoteSchemaName(identity, connection, schemaTableName.getSchemaName());
-            String remoteTable = toRemoteTableName(identity, connection, remoteSchema, schemaTableName.getTableName());
-            try (ResultSet resultSet = getTables(connection, Optional.of(remoteSchema), Optional.of(remoteTable))) {
+        try (ShannonDBSocketClient shannonDBSocketClient = shannonDBSocketClientFactory.openSocket(identity)) {
+            String remoteSchema = toRemoteSchemaName(identity, shannonDBSocketClient, schemaTableName.getSchemaName());
+            String remoteTable = toRemoteTableName(identity, shannonDBSocketClient, remoteSchema, schemaTableName.getTableName());
+            try (ShannonDBResultSet resultSet = getTables(shannonDBSocketClient, Optional.of(remoteSchema), Optional.of(remoteTable))) {
                 List<ShannonDBTableHandle> tableHandles = new ArrayList<>();
                 while (resultSet.next()) {
                     tableHandles.add(new ShannonDBTableHandle(
@@ -243,7 +209,7 @@ public class BaseJdbcClient
                 return Optional.of(getOnlyElement(tableHandles));
             }
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             throw new PrestoException(JDBC_ERROR, e);
         }
     }
@@ -251,9 +217,8 @@ public class BaseJdbcClient
     @Override
     public List<ShannonDBColumnHandle> getColumns(ConnectorSession session, ShannonDBTableHandle tableHandle)
     {
-        try {
-            Connection connection = connectionCache.get(JdbcIdentity.from(session));
-            try (ResultSet resultSet = getColumns(tableHandle, connection.getMetaData())) {
+        try (ShannonDBSocketClient shannonDBSocketClient = shannonDBSocketClientFactory.openSocket(ShannonDBIdentity.from(session))) {
+            try (ShannonDBResultSet resultSet = shannonDBSocketClient.getColumns(tableHandle)) {
                 List<ShannonDBColumnHandle> columns = new ArrayList<>();
                 while (resultSet.next()) {
                     ShannonDBTypeHandle typeHandle = new ShannonDBTypeHandle(
@@ -277,7 +242,7 @@ public class BaseJdbcClient
                 return ImmutableList.copyOf(columns);
             }
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             throw new PrestoException(JDBC_ERROR, e);
         }
     }
@@ -289,34 +254,27 @@ public class BaseJdbcClient
     }
 
     @Override
-    public ConnectorSplitSource getSplits(JdbcIdentity identity, ShannonDBTableHandle tableHandle)
+    public ConnectorSplitSource getSplits(ShannonDBIdentity identity, ShannonDBTableHandle tableHandle)
     {
-        return new FixedSplitSource(ImmutableList.of(new JdbcSplit(Optional.empty())));
+        return new FixedSplitSource(ImmutableList.of(new ShannonDBSplit(Optional.empty())));
     }
 
     @Override
-    public Connection getConnection(JdbcIdentity identity, JdbcSplit split)
-            throws SQLException
+    public ShannonDBSocketClient getShannonDBSocketClient(ShannonDBIdentity identity, ShannonDBSplit split)
+            throws Exception
     {
-        Connection connection = connectionCache.get(identity);
-        try {
-            connection.setReadOnly(true);
-        }
-        catch (SQLException e) {
-            connection.close();
-            throw e;
-        }
-        return connection;
+        ShannonDBSocketClient shannonDBSocketClient = shannonDBSocketClientFactory.openSocket(identity);
+        return shannonDBSocketClient;
     }
 
     @Override
-    public PreparedStatement buildSql(ConnectorSession session, Connection connection, JdbcSplit split, ShannonDBTableHandle table, List<ShannonDBColumnHandle> columns)
-            throws SQLException
+    public ShannonDBPreparedStatement buildSql(ConnectorSession session, ShannonDBSocketClient shannonDBSocketClient, ShannonDBSplit split, ShannonDBTableHandle table, List<ShannonDBColumnHandle> columns)
+            throws Exception
     {
         return new QueryBuilder(identifierQuote).buildSql(
                 this,
                 session,
-                connection,
+                shannonDBSocketClient,
                 table.getCatalogName(),
                 table.getSchemaName(),
                 table.getTableName(),
@@ -332,51 +290,51 @@ public class BaseJdbcClient
         try {
             createTable(session, tableMetadata, tableMetadata.getTable().getTableName());
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             throw new PrestoException(JDBC_ERROR, e);
         }
     }
 
     @Override
-    public JdbcOutputTableHandle beginCreateTable(ConnectorSession session, ConnectorTableMetadata tableMetadata)
+    public ShannonDBOutputTableHandle beginCreateTable(ConnectorSession session, ConnectorTableMetadata tableMetadata)
     {
         return beginWriteTable(session, tableMetadata);
     }
 
     @Override
-    public JdbcOutputTableHandle beginInsertTable(ConnectorSession session, ConnectorTableMetadata tableMetadata)
+    public ShannonDBOutputTableHandle beginInsertTable(ConnectorSession session, ConnectorTableMetadata tableMetadata)
     {
         return beginWriteTable(session, tableMetadata);
     }
 
-    private JdbcOutputTableHandle beginWriteTable(ConnectorSession session, ConnectorTableMetadata tableMetadata)
+    private ShannonDBOutputTableHandle beginWriteTable(ConnectorSession session, ConnectorTableMetadata tableMetadata)
     {
         try {
             return createTable(session, tableMetadata, generateTemporaryTableName());
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             throw new PrestoException(JDBC_ERROR, e);
         }
     }
 
-    protected JdbcOutputTableHandle createTable(ConnectorSession session, ConnectorTableMetadata tableMetadata, String tableName)
-            throws SQLException
+    protected ShannonDBOutputTableHandle createTable(ConnectorSession session, ConnectorTableMetadata tableMetadata, String tableName)
+            throws Exception
     {
         SchemaTableName schemaTableName = tableMetadata.getTable();
 
-        JdbcIdentity identity = JdbcIdentity.from(session);
+        ShannonDBIdentity identity = ShannonDBIdentity.from(session);
         if (!getSchemaNames(identity).contains(schemaTableName.getSchemaName())) {
             throw new PrestoException(NOT_FOUND, "Schema not found: " + schemaTableName.getSchemaName());
         }
 
-        try (Connection connection = connectionFactory.openConnection(identity)) {
-            boolean uppercase = connection.getMetaData().storesUpperCaseIdentifiers();
-            String remoteSchema = toRemoteSchemaName(identity, connection, schemaTableName.getSchemaName());
-            String remoteTable = toRemoteTableName(identity, connection, remoteSchema, schemaTableName.getTableName());
+        try (ShannonDBSocketClient shannonDBSocketClient = shannonDBSocketClientFactory.openSocket(identity)) {
+            boolean uppercase = shannonDBSocketClient.storesUpperCaseIdentifiers();
+            String remoteSchema = toRemoteSchemaName(identity, shannonDBSocketClient, schemaTableName.getSchemaName());
+            String remoteTable = toRemoteTableName(identity, shannonDBSocketClient, remoteSchema, schemaTableName.getTableName());
             if (uppercase) {
                 tableName = tableName.toUpperCase(ENGLISH);
             }
-            String catalog = connection.getCatalog();
+            String catalog = shannonDBSocketClient.getCatalog();
 
             ImmutableList.Builder<String> columnNames = ImmutableList.builder();
             ImmutableList.Builder<Type> columnTypes = ImmutableList.builder();
@@ -388,7 +346,7 @@ public class BaseJdbcClient
                 }
                 columnNames.add(columnName);
                 columnTypes.add(column.getType());
-                // TODO in INSERT case, we should reuse original column type and, ideally, constraints (then JdbcPageSink must get writer from toPrestoType())
+                // TODO in INSERT case, we should reuse original column type and, ideally, constraints (then ShannonDBPageSink must get writer from toPrestoType())
                 columnList.add(getColumnSql(session, column, columnName));
             }
 
@@ -396,9 +354,9 @@ public class BaseJdbcClient
                     "CREATE TABLE %s (%s)",
                     quoted(catalog, remoteSchema, tableName),
                     join(", ", columnList.build()));
-            execute(connection, sql);
+            execute(shannonDBSocketClient, sql);
 
-            return new JdbcOutputTableHandle(
+            return new ShannonDBOutputTableHandle(
                     catalog,
                     remoteSchema,
                     remoteTable,
@@ -426,7 +384,7 @@ public class BaseJdbcClient
     }
 
     @Override
-    public void commitCreateTable(JdbcIdentity identity, JdbcOutputTableHandle handle)
+    public void commitCreateTable(ShannonDBIdentity identity, ShannonDBOutputTableHandle handle)
     {
         renameTable(
                 identity,
@@ -437,17 +395,17 @@ public class BaseJdbcClient
     }
 
     @Override
-    public void renameTable(JdbcIdentity identity, ShannonDBTableHandle handle, SchemaTableName newTableName)
+    public void renameTable(ShannonDBIdentity identity, ShannonDBTableHandle handle, SchemaTableName newTableName)
     {
         renameTable(identity, handle.getCatalogName(), handle.getSchemaName(), handle.getTableName(), newTableName);
     }
 
-    protected void renameTable(JdbcIdentity identity, String catalogName, String schemaName, String tableName, SchemaTableName newTable)
+    protected void renameTable(ShannonDBIdentity identity, String catalogName, String schemaName, String tableName, SchemaTableName newTable)
     {
-        try (Connection connection = connectionFactory.openConnection(identity)) {
+        try (ShannonDBSocketClient shannonDBSocketClient = shannonDBSocketClientFactory.openSocket(identity)) {
             String newSchemaName = newTable.getSchemaName();
             String newTableName = newTable.getTableName();
-            if (connection.getMetaData().storesUpperCaseIdentifiers()) {
+            if (shannonDBSocketClient.storesUpperCaseIdentifiers()) {
                 newSchemaName = newSchemaName.toUpperCase(ENGLISH);
                 newTableName = newTableName.toUpperCase(ENGLISH);
             }
@@ -455,32 +413,32 @@ public class BaseJdbcClient
                     "ALTER TABLE %s RENAME TO %s",
                     quoted(catalogName, schemaName, tableName),
                     quoted(catalogName, newSchemaName, newTableName));
-            execute(connection, sql);
+            execute(shannonDBSocketClient, sql);
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             throw new PrestoException(JDBC_ERROR, e);
         }
     }
 
     @Override
-    public void finishInsertTable(JdbcIdentity identity, JdbcOutputTableHandle handle)
+    public void finishInsertTable(ShannonDBIdentity identity, ShannonDBOutputTableHandle handle)
     {
         String temporaryTable = quoted(handle.getCatalogName(), handle.getSchemaName(), handle.getTemporaryTableName());
         String targetTable = quoted(handle.getCatalogName(), handle.getSchemaName(), handle.getTableName());
         String insertSql = format("INSERT INTO %s SELECT * FROM %s", targetTable, temporaryTable);
         String cleanupSql = "DROP TABLE " + temporaryTable;
 
-        try (Connection connection = getConnection(identity, handle)) {
-            execute(connection, insertSql);
+        try (ShannonDBSocketClient shannonDBSocketClient = getShannonDBSocketClient(identity, handle)) {
+            execute(shannonDBSocketClient, insertSql);
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             throw new PrestoException(JDBC_ERROR, e);
         }
 
-        try (Connection connection = getConnection(identity, handle)) {
-            execute(connection, cleanupSql);
+        try (ShannonDBSocketClient shannonDBSocketClient = getShannonDBSocketClient(identity, handle)) {
+            execute(shannonDBSocketClient, cleanupSql);
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             log.warn(e, "Failed to cleanup temporary table: %s", temporaryTable);
         }
     }
@@ -488,27 +446,27 @@ public class BaseJdbcClient
     @Override
     public void addColumn(ConnectorSession session, ShannonDBTableHandle handle, ColumnMetadata column)
     {
-        try (Connection connection = connectionFactory.openConnection(JdbcIdentity.from(session))) {
+        try (ShannonDBSocketClient shannonDBSocketClient = shannonDBSocketClientFactory.openSocket(ShannonDBIdentity.from(session))) {
             String columnName = column.getName();
-            if (connection.getMetaData().storesUpperCaseIdentifiers()) {
+            if (shannonDBSocketClient.storesUpperCaseIdentifiers()) {
                 columnName = columnName.toUpperCase(ENGLISH);
             }
             String sql = format(
                     "ALTER TABLE %s ADD %s",
                     quoted(handle.getCatalogName(), handle.getSchemaName(), handle.getTableName()),
                     getColumnSql(session, column, columnName));
-            execute(connection, sql);
+            execute(shannonDBSocketClient, sql);
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             throw new PrestoException(JDBC_ERROR, e);
         }
     }
 
     @Override
-    public void renameColumn(JdbcIdentity identity, ShannonDBTableHandle handle, ShannonDBColumnHandle jdbcColumn, String newColumnName)
+    public void renameColumn(ShannonDBIdentity identity, ShannonDBTableHandle handle, ShannonDBColumnHandle jdbcColumn, String newColumnName)
     {
-        try (Connection connection = connectionFactory.openConnection(identity)) {
-            if (connection.getMetaData().storesUpperCaseIdentifiers()) {
+        try (ShannonDBSocketClient shannonDBSocketClient = shannonDBSocketClientFactory.openSocket(identity)) {
+            if (shannonDBSocketClient.storesUpperCaseIdentifiers()) {
                 newColumnName = newColumnName.toUpperCase(ENGLISH);
             }
             String sql = format(
@@ -516,43 +474,43 @@ public class BaseJdbcClient
                     quoted(handle.getCatalogName(), handle.getSchemaName(), handle.getTableName()),
                     jdbcColumn.getColumnName(),
                     newColumnName);
-            execute(connection, sql);
+            execute(shannonDBSocketClient, sql);
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             throw new PrestoException(JDBC_ERROR, e);
         }
     }
 
     @Override
-    public void dropColumn(JdbcIdentity identity, ShannonDBTableHandle handle, ShannonDBColumnHandle column)
+    public void dropColumn(ShannonDBIdentity identity, ShannonDBTableHandle handle, ShannonDBColumnHandle column)
     {
-        try (Connection connection = connectionFactory.openConnection(identity)) {
+        try (ShannonDBSocketClient shannonDBSocketClient = shannonDBSocketClientFactory.openSocket(identity)) {
             String sql = format(
                     "ALTER TABLE %s DROP COLUMN %s",
                     quoted(handle.getCatalogName(), handle.getSchemaName(), handle.getTableName()),
                     column.getColumnName());
-            execute(connection, sql);
+            execute(shannonDBSocketClient, sql);
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             throw new PrestoException(JDBC_ERROR, e);
         }
     }
 
     @Override
-    public void dropTable(JdbcIdentity identity, ShannonDBTableHandle handle)
+    public void dropTable(ShannonDBIdentity identity, ShannonDBTableHandle handle)
     {
         String sql = "DROP TABLE " + quoted(handle.getCatalogName(), handle.getSchemaName(), handle.getTableName());
 
-        try (Connection connection = connectionFactory.openConnection(identity)) {
-            execute(connection, sql);
+        try (ShannonDBSocketClient shannonDBSocketClient = shannonDBSocketClientFactory.openSocket(identity)) {
+            execute(shannonDBSocketClient, sql);
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             throw new PrestoException(JDBC_ERROR, e);
         }
     }
 
     @Override
-    public void rollbackCreateTable(JdbcIdentity identity, JdbcOutputTableHandle handle)
+    public void rollbackCreateTable(ShannonDBIdentity identity, ShannonDBOutputTableHandle handle)
     {
         dropTable(identity, new ShannonDBTableHandle(
                 new SchemaTableName(handle.getSchemaName(), handle.getTemporaryTableName()),
@@ -562,7 +520,7 @@ public class BaseJdbcClient
     }
 
     @Override
-    public String buildInsertSql(JdbcOutputTableHandle handle)
+    public String buildInsertSql(ShannonDBOutputTableHandle handle)
     {
         return format(
                 "INSERT INTO %s VALUES (%s)",
@@ -571,38 +529,37 @@ public class BaseJdbcClient
     }
 
     @Override
-    public Connection getConnection(JdbcIdentity identity, JdbcOutputTableHandle handle)
-            throws SQLException
+    public ShannonDBSocketClient getShannonDBSocketClient(ShannonDBIdentity identity, ShannonDBOutputTableHandle handle)
+            throws Exception
     {
-        return connectionCache.get(identity);
+        return shannonDBSocketClientFactory.openSocket(identity);
     }
 
     @Override
-    public PreparedStatement getPreparedStatement(Connection connection, String sql)
-            throws SQLException
+    public ShannonDBPreparedStatement getShannonDBPreparedStatement(ShannonDBSocketClient shannonDBSocketClient, String sql)
+            throws Exception
     {
-        return connection.prepareStatement(sql);
+        return shannonDBSocketClient.prepareStatement(sql);
     }
 
-    protected ResultSet getTables(Connection connection, Optional<String> schemaName, Optional<String> tableName)
-            throws SQLException
+    protected ShannonDBResultSet getTables(ShannonDBSocketClient shannonDBSocketClient, Optional<String> schemaName, Optional<String> tableName)
+            throws Exception
     {
-        DatabaseMetaData metadata = connection.getMetaData();
-        Optional<String> escape = Optional.ofNullable(metadata.getSearchStringEscape());
-        return metadata.getTables(
-                connection.getCatalog(),
+        Optional<String> escape = shannonDBSocketClient.getSearchStringEscape();
+        return shannonDBSocketClient.getTables(
+                shannonDBSocketClient.getCatalog(),
                 escapeNamePattern(schemaName, escape).orElse(null),
                 escapeNamePattern(tableName, escape).orElse(null),
                 new String[] {"TABLE", "VIEW"});
     }
 
-    protected String getTableSchemaName(ResultSet resultSet)
-            throws SQLException
+    protected String getTableSchemaName(ShannonDBResultSet resultSet)
+            throws Exception
     {
         return resultSet.getString("TABLE_SCHEM");
     }
 
-    protected String toRemoteSchemaName(JdbcIdentity identity, Connection connection, String schemaName)
+    protected String toRemoteSchemaName(ShannonDBIdentity identity, ShannonDBSocketClient shannonDBSocketClient, String schemaName)
     {
         requireNonNull(schemaName, "schemaName is null");
         verify(CharMatcher.forPredicate(Character::isUpperCase).matchesNoneOf(schemaName), "Expected schema name from internal metadata to be lowercase: %s", schemaName);
@@ -615,7 +572,7 @@ public class BaseJdbcClient
                     mapping = null;
                 }
                 if (mapping == null) {
-                    mapping = listSchemasByLowerCase(connection);
+                    mapping = listSchemasByLowerCase(shannonDBSocketClient);
                     remoteSchemaNames.put(identity, mapping);
                 }
                 String remoteSchema = mapping.get(schemaName);
@@ -629,24 +586,23 @@ public class BaseJdbcClient
         }
 
         try {
-            DatabaseMetaData metadata = connection.getMetaData();
-            if (metadata.storesUpperCaseIdentifiers()) {
+            if (shannonDBSocketClient.storesUpperCaseIdentifiers()) {
                 return schemaName.toUpperCase(ENGLISH);
             }
             return schemaName;
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             throw new PrestoException(JDBC_ERROR, e);
         }
     }
 
-    protected Map<String, String> listSchemasByLowerCase(Connection connection)
+    protected Map<String, String> listSchemasByLowerCase(ShannonDBSocketClient shannonDBSocketClient)
     {
-        return listSchemas(connection).stream()
+        return listSchemas(shannonDBSocketClient).stream()
                 .collect(toImmutableMap(schemaName -> schemaName.toLowerCase(ENGLISH), schemaName -> schemaName));
     }
 
-    protected String toRemoteTableName(JdbcIdentity identity, Connection connection, String remoteSchema, String tableName)
+    protected String toRemoteTableName(ShannonDBIdentity identity, ShannonDBSocketClient shannonDBSocketClient, String remoteSchema, String tableName)
     {
         requireNonNull(remoteSchema, "remoteSchema is null");
         requireNonNull(tableName, "tableName is null");
@@ -661,7 +617,7 @@ public class BaseJdbcClient
                     mapping = null;
                 }
                 if (mapping == null) {
-                    mapping = listTablesByLowerCase(connection, remoteSchema);
+                    mapping = listTablesByLowerCase(shannonDBSocketClient, remoteSchema);
                     remoteTableNames.put(cacheKey, mapping);
                 }
                 String remoteTable = mapping.get(tableName);
@@ -675,20 +631,19 @@ public class BaseJdbcClient
         }
 
         try {
-            DatabaseMetaData metadata = connection.getMetaData();
-            if (metadata.storesUpperCaseIdentifiers()) {
+            if (shannonDBSocketClient.storesUpperCaseIdentifiers()) {
                 return tableName.toUpperCase(ENGLISH);
             }
             return tableName;
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             throw new PrestoException(JDBC_ERROR, e);
         }
     }
 
-    protected Map<String, String> listTablesByLowerCase(Connection connection, String remoteSchema)
+    protected Map<String, String> listTablesByLowerCase(ShannonDBSocketClient shannonDBSocketClient, String remoteSchema)
     {
-        try (ResultSet resultSet = getTables(connection, Optional.of(remoteSchema), Optional.empty())) {
+        try (ShannonDBResultSet resultSet = getTables(shannonDBSocketClient, Optional.of(remoteSchema), Optional.empty())) {
             ImmutableMap.Builder<String, String> map = ImmutableMap.builder();
             while (resultSet.next()) {
                 String tableName = resultSet.getString("TABLE_NAME");
@@ -696,7 +651,7 @@ public class BaseJdbcClient
             }
             return map.build();
         }
-        catch (SQLException e) {
+        catch (Exception e) {
             throw new PrestoException(JDBC_ERROR, e);
         }
     }
@@ -707,13 +662,17 @@ public class BaseJdbcClient
         return TableStatistics.empty();
     }
 
-    protected void execute(Connection connection, String query)
-            throws SQLException
+    @Override
+    public void abortReadConnection(ShannonDBSocketClient connection)
     {
-        try (Statement statement = connection.createStatement()) {
-            log.debug("Execute: %s", query);
-            statement.execute(query);
-        }
+
+    }
+
+    protected void execute(ShannonDBSocketClient shannonDBSocketClient, String query)
+            throws Exception
+    {
+        log.debug("Execute: %s", query);
+        shannonDBSocketClient.execute(query);
     }
 
     @Override
@@ -815,11 +774,11 @@ public class BaseJdbcClient
         return name;
     }
 
-    protected static ResultSet getColumns(ShannonDBTableHandle tableHandle, DatabaseMetaData metadata)
-            throws SQLException
+    protected static ShannonDBResultSet getColumns(ShannonDBTableHandle tableHandle, ShannonDBSocketClient shannonDBSocketClient)
+            throws Exception
     {
-        Optional<String> escape = Optional.ofNullable(metadata.getSearchStringEscape());
-        return metadata.getColumns(
+        Optional<String> escape = shannonDBSocketClient.getSearchStringEscape();
+        return shannonDBSocketClient.getColumns(
                 tableHandle.getCatalogName(),
                 escapeNamePattern(Optional.ofNullable(tableHandle.getSchemaName()), escape).orElse(null),
                 escapeNamePattern(Optional.ofNullable(tableHandle.getTableName()), escape).orElse(null),

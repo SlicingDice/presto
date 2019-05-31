@@ -49,36 +49,36 @@ import static com.google.common.base.Preconditions.checkState;
 import static io.prestosql.spi.StandardErrorCode.PERMISSION_DENIED;
 import static java.util.Objects.requireNonNull;
 
-public class JdbcMetadata
+public class ShannonDBMetadata
         implements ConnectorMetadata
 {
-    private final JdbcClient jdbcClient;
+    private final ShannonDBClient shannonDBClient;
     private final boolean allowDropTable;
 
     private final AtomicReference<Runnable> rollbackAction = new AtomicReference<>();
 
-    public JdbcMetadata(JdbcClient jdbcClient, boolean allowDropTable)
+    public ShannonDBMetadata(ShannonDBClient shannonDBClient, boolean allowDropTable)
     {
-        this.jdbcClient = requireNonNull(jdbcClient, "client is null");
+        this.shannonDBClient = requireNonNull(shannonDBClient, "client is null");
         this.allowDropTable = allowDropTable;
     }
 
     @Override
     public boolean schemaExists(ConnectorSession session, String schemaName)
     {
-        return jdbcClient.schemaExists(JdbcIdentity.from(session), schemaName);
+        return shannonDBClient.schemaExists(ShannonDBIdentity.from(session), schemaName);
     }
 
     @Override
     public List<String> listSchemaNames(ConnectorSession session)
     {
-        return ImmutableList.copyOf(jdbcClient.getSchemaNames(JdbcIdentity.from(session)));
+        return ImmutableList.copyOf(shannonDBClient.getSchemaNames(ShannonDBIdentity.from(session)));
     }
 
     @Override
     public ShannonDBTableHandle getTableHandle(ConnectorSession session, SchemaTableName tableName)
     {
-        return jdbcClient.getTableHandle(JdbcIdentity.from(session), tableName)
+        return shannonDBClient.getTableHandle(ShannonDBIdentity.from(session), tableName)
                 .orElse(null);
     }
 
@@ -109,7 +109,7 @@ public class JdbcMetadata
     {
         ShannonDBTableHandle handle = (ShannonDBTableHandle) table;
 
-        if (!jdbcClient.supportsLimit()) {
+        if (!shannonDBClient.supportsLimit()) {
             return Optional.empty();
         }
 
@@ -125,7 +125,7 @@ public class JdbcMetadata
                 handle.getConstraint(),
                 OptionalLong.of(limit));
 
-        return Optional.of(new LimitApplicationResult<>(handle, jdbcClient.isLimitGuaranteed()));
+        return Optional.of(new LimitApplicationResult<>(handle, shannonDBClient.isLimitGuaranteed()));
     }
 
     @Override
@@ -146,7 +146,7 @@ public class JdbcMetadata
         ShannonDBTableHandle handle = (ShannonDBTableHandle) table;
 
         ImmutableList.Builder<ColumnMetadata> columnMetadata = ImmutableList.builder();
-        for (ShannonDBColumnHandle column : jdbcClient.getColumns(session, handle)) {
+        for (ShannonDBColumnHandle column : shannonDBClient.getColumns(session, handle)) {
             columnMetadata.add(column.getColumnMetadata());
         }
         return new ConnectorTableMetadata(handle.getSchemaTableName(), columnMetadata.build());
@@ -155,7 +155,7 @@ public class JdbcMetadata
     @Override
     public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> schemaName)
     {
-        return jdbcClient.getTableNames(JdbcIdentity.from(session), schemaName);
+        return shannonDBClient.getTableNames(ShannonDBIdentity.from(session), schemaName);
     }
 
     @Override
@@ -164,7 +164,7 @@ public class JdbcMetadata
         ShannonDBTableHandle shannonDBTableHandle = (ShannonDBTableHandle) tableHandle;
 
         ImmutableMap.Builder<String, ColumnHandle> columnHandles = ImmutableMap.builder();
-        for (ShannonDBColumnHandle column : jdbcClient.getColumns(session, shannonDBTableHandle)) {
+        for (ShannonDBColumnHandle column : shannonDBClient.getColumns(session, shannonDBTableHandle)) {
             columnHandles.put(column.getColumnMetadata().getName(), column);
         }
         return columnHandles.build();
@@ -179,7 +179,7 @@ public class JdbcMetadata
                 .orElseGet(() -> listTables(session, prefix.getSchema()));
         for (SchemaTableName tableName : tables) {
             try {
-                jdbcClient.getTableHandle(JdbcIdentity.from(session), tableName)
+                shannonDBClient.getTableHandle(ShannonDBIdentity.from(session), tableName)
                         .ifPresent(tableHandle -> columns.put(tableName, getTableMetadata(session, tableHandle).getColumns()));
             }
             catch (TableNotFoundException e) {
@@ -202,28 +202,28 @@ public class JdbcMetadata
             throw new PrestoException(PERMISSION_DENIED, "DROP TABLE is disabled in this catalog");
         }
         ShannonDBTableHandle handle = (ShannonDBTableHandle) tableHandle;
-        jdbcClient.dropTable(JdbcIdentity.from(session), handle);
+        shannonDBClient.dropTable(ShannonDBIdentity.from(session), handle);
     }
 
     @Override
     public ConnectorOutputTableHandle beginCreateTable(ConnectorSession session, ConnectorTableMetadata tableMetadata, Optional<ConnectorNewTableLayout> layout)
     {
-        JdbcOutputTableHandle handle = jdbcClient.beginCreateTable(session, tableMetadata);
-        setRollback(() -> jdbcClient.rollbackCreateTable(JdbcIdentity.from(session), handle));
+        ShannonDBOutputTableHandle handle = shannonDBClient.beginCreateTable(session, tableMetadata);
+        setRollback(() -> shannonDBClient.rollbackCreateTable(ShannonDBIdentity.from(session), handle));
         return handle;
     }
 
     @Override
     public void createTable(ConnectorSession session, ConnectorTableMetadata tableMetadata, boolean ignoreExisting)
     {
-        jdbcClient.createTable(session, tableMetadata);
+        shannonDBClient.createTable(session, tableMetadata);
     }
 
     @Override
     public Optional<ConnectorOutputMetadata> finishCreateTable(ConnectorSession session, ConnectorOutputTableHandle tableHandle, Collection<Slice> fragments, Collection<ComputedStatistics> computedStatistics)
     {
-        JdbcOutputTableHandle handle = (JdbcOutputTableHandle) tableHandle;
-        jdbcClient.commitCreateTable(JdbcIdentity.from(session), handle);
+        ShannonDBOutputTableHandle handle = (ShannonDBOutputTableHandle) tableHandle;
+        shannonDBClient.commitCreateTable(ShannonDBIdentity.from(session), handle);
         clearRollback();
         return Optional.empty();
     }
@@ -246,16 +246,16 @@ public class JdbcMetadata
     @Override
     public ConnectorInsertTableHandle beginInsert(ConnectorSession session, ConnectorTableHandle tableHandle)
     {
-        JdbcOutputTableHandle handle = jdbcClient.beginInsertTable(session, getTableMetadata(session, tableHandle));
-        setRollback(() -> jdbcClient.rollbackCreateTable(JdbcIdentity.from(session), handle));
+        ShannonDBOutputTableHandle handle = shannonDBClient.beginInsertTable(session, getTableMetadata(session, tableHandle));
+        setRollback(() -> shannonDBClient.rollbackCreateTable(ShannonDBIdentity.from(session), handle));
         return handle;
     }
 
     @Override
     public Optional<ConnectorOutputMetadata> finishInsert(ConnectorSession session, ConnectorInsertTableHandle tableHandle, Collection<Slice> fragments, Collection<ComputedStatistics> computedStatistics)
     {
-        JdbcOutputTableHandle jdbcInsertHandle = (JdbcOutputTableHandle) tableHandle;
-        jdbcClient.finishInsertTable(JdbcIdentity.from(session), jdbcInsertHandle);
+        ShannonDBOutputTableHandle jdbcInsertHandle = (ShannonDBOutputTableHandle) tableHandle;
+        shannonDBClient.finishInsertTable(ShannonDBIdentity.from(session), jdbcInsertHandle);
         return Optional.empty();
     }
 
@@ -263,7 +263,7 @@ public class JdbcMetadata
     public void addColumn(ConnectorSession session, ConnectorTableHandle table, ColumnMetadata columnMetadata)
     {
         ShannonDBTableHandle tableHandle = (ShannonDBTableHandle) table;
-        jdbcClient.addColumn(session, tableHandle, columnMetadata);
+        shannonDBClient.addColumn(session, tableHandle, columnMetadata);
     }
 
     @Override
@@ -271,7 +271,7 @@ public class JdbcMetadata
     {
         ShannonDBTableHandle tableHandle = (ShannonDBTableHandle) table;
         ShannonDBColumnHandle columnHandle = (ShannonDBColumnHandle) column;
-        jdbcClient.dropColumn(JdbcIdentity.from(session), tableHandle, columnHandle);
+        shannonDBClient.dropColumn(ShannonDBIdentity.from(session), tableHandle, columnHandle);
     }
 
     @Override
@@ -279,20 +279,20 @@ public class JdbcMetadata
     {
         ShannonDBTableHandle tableHandle = (ShannonDBTableHandle) table;
         ShannonDBColumnHandle columnHandle = (ShannonDBColumnHandle) column;
-        jdbcClient.renameColumn(JdbcIdentity.from(session), tableHandle, columnHandle, target);
+        shannonDBClient.renameColumn(ShannonDBIdentity.from(session), tableHandle, columnHandle, target);
     }
 
     @Override
     public void renameTable(ConnectorSession session, ConnectorTableHandle table, SchemaTableName newTableName)
     {
         ShannonDBTableHandle tableHandle = (ShannonDBTableHandle) table;
-        jdbcClient.renameTable(JdbcIdentity.from(session), tableHandle, newTableName);
+        shannonDBClient.renameTable(ShannonDBIdentity.from(session), tableHandle, newTableName);
     }
 
     @Override
     public TableStatistics getTableStatistics(ConnectorSession session, ConnectorTableHandle tableHandle, Constraint constraint)
     {
         ShannonDBTableHandle handle = (ShannonDBTableHandle) tableHandle;
-        return jdbcClient.getTableStatistics(session, handle, constraint.getSummary());
+        return shannonDBClient.getTableStatistics(session, handle, constraint.getSummary());
     }
 }

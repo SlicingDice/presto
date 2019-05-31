@@ -27,6 +27,6 @@ public interface BlockWriteFunction
         return Block.class;
     }
 
-    void set(PreparedStatement statement, int index, Block value)
+    void set(ShannonDBPreparedStatement statement, int index, Block value)
             throws SQLException;
 }

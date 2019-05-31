@@ -25,6 +25,6 @@ public interface LongWriteFunction
         return long.class;
     }
 
-    void set(PreparedStatement statement, int index, long value)
+    void set(ShannonDBPreparedStatement statement, int index, long value)
             throws SQLException;
 }

@@ -65,7 +65,7 @@ public class ShannonDBConnectorFactory
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
             Bootstrap app = new Bootstrap(
                     binder -> binder.bind(TypeManager.class).toInstance(context.getTypeManager()),
-                    new JdbcModule(),
+                    new ShannonDBModule(),
                     module);
 
             Injector injector = app

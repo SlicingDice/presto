@@ -24,13 +24,13 @@ import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
-public class JdbcSplit
+public class ShannonDBSplit
         implements ConnectorSplit
 {
     private final Optional<String> additionalPredicate;
 
     @JsonCreator
-    public JdbcSplit(
+    public ShannonDBSplit(
             @JsonProperty("additionalPredicate") Optional<String> additionalPredicate)
     {
         this.additionalPredicate = requireNonNull(additionalPredicate, "additionalPredicate is null");

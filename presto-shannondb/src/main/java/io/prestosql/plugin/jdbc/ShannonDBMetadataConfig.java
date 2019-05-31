@@ -13,18 +13,23 @@
  */
 package io.prestosql.plugin.jdbc;
 
-import java.sql.Connection;
-import java.sql.SQLException;
+import io.airlift.configuration.Config;
+import io.airlift.configuration.ConfigDescription;
 
-@FunctionalInterface
-public interface ConnectionFactory
-        extends AutoCloseable
+public class ShannonDBMetadataConfig
 {
-    Connection openConnection(JdbcIdentity identity)
-            throws SQLException;
+    private boolean allowDropTable;
 
-    @Override
-    default void close()
-            throws SQLException
-    {}
+    public boolean isAllowDropTable()
+    {
+        return allowDropTable;
+    }
+
+    @Config("allow-drop-table")
+    @ConfigDescription("Allow connector to drop tables")
+    public ShannonDBMetadataConfig setAllowDropTable(boolean allowDropTable)
+    {
+        this.allowDropTable = allowDropTable;
+        return this;
+    }
 }

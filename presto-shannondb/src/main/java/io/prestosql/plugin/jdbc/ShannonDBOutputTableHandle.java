@@ -29,7 +29,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
-public class JdbcOutputTableHandle
+public class ShannonDBOutputTableHandle
         implements ConnectorOutputTableHandle, ConnectorInsertTableHandle
 {
     private final String catalogName;
@@ -40,7 +40,7 @@ public class JdbcOutputTableHandle
     private final String temporaryTableName;
 
     @JsonCreator
-    public JdbcOutputTableHandle(
+    public ShannonDBOutputTableHandle(
             @JsonProperty("catalogName") @Nullable String catalogName,
             @JsonProperty("schemaName") @Nullable String schemaName,
             @JsonProperty("tableName") String tableName,
@@ -125,7 +125,7 @@ public class JdbcOutputTableHandle
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        JdbcOutputTableHandle other = (JdbcOutputTableHandle) obj;
+        ShannonDBOutputTableHandle other = (ShannonDBOutputTableHandle) obj;
         return Objects.equals(this.catalogName, other.catalogName) &&
                 Objects.equals(this.schemaName, other.schemaName) &&
                 Objects.equals(this.tableName, other.tableName) &&

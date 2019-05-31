@@ -25,6 +25,6 @@ public interface DoubleWriteFunction
         return double.class;
     }
 
-    void set(PreparedStatement statement, int index, double value)
+    void set(ShannonDBPreparedStatement statement, int index, double value)
             throws SQLException;
 }

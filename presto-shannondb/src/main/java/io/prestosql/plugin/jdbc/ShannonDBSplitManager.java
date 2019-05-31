@@ -23,20 +23,20 @@ import javax.inject.Inject;
 
 import static java.util.Objects.requireNonNull;
 
-public class JdbcSplitManager
+public class ShannonDBSplitManager
         implements ConnectorSplitManager
 {
-    private final JdbcClient jdbcClient;
+    private final ShannonDBClient shannonDBClient;
 
     @Inject
-    public JdbcSplitManager(JdbcClient jdbcClient)
+    public ShannonDBSplitManager(ShannonDBClient shannonDBClient)
     {
-        this.jdbcClient = requireNonNull(jdbcClient, "client is null");
+        this.shannonDBClient = requireNonNull(shannonDBClient, "client is null");
     }
 
     @Override
     public ConnectorSplitSource getSplits(ConnectorTransactionHandle transaction, ConnectorSession session, ConnectorTableHandle table, SplitSchedulingStrategy splitSchedulingStrategy)
     {
-        return jdbcClient.getSplits(JdbcIdentity.from(session), (ShannonDBTableHandle) table);
+        return shannonDBClient.getSplits(ShannonDBIdentity.from(session), (ShannonDBTableHandle) table);
     }
 }

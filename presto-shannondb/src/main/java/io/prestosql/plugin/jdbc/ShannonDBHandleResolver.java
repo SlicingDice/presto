@@ -45,18 +45,18 @@ public class ShannonDBHandleResolver
     @Override
     public Class<? extends ConnectorSplit> getSplitClass()
     {
-        return JdbcSplit.class;
+        return ShannonDBSplit.class;
     }
 
     @Override
     public Class<? extends ConnectorOutputTableHandle> getOutputTableHandleClass()
     {
-        return JdbcOutputTableHandle.class;
+        return ShannonDBOutputTableHandle.class;
     }
 
     @Override
     public Class<? extends ConnectorInsertTableHandle> getInsertTableHandleClass()
     {
-        return JdbcOutputTableHandle.class;
+        return ShannonDBOutputTableHandle.class;
     }
 }

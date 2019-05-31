@@ -23,19 +23,19 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
-public class JdbcRecordSet
+public class ShannonDBRecordSet
         implements RecordSet
 {
-    private final JdbcClient jdbcClient;
+    private final ShannonDBClient shannonDBClient;
     private final ShannonDBTableHandle table;
     private final List<ShannonDBColumnHandle> columnHandles;
     private final List<Type> columnTypes;
-    private final JdbcSplit split;
+    private final ShannonDBSplit split;
     private final ConnectorSession session;
 
-    public JdbcRecordSet(JdbcClient jdbcClient, ConnectorSession session, JdbcSplit split, ShannonDBTableHandle table, List<ShannonDBColumnHandle> columnHandles)
+    public ShannonDBRecordSet(ShannonDBClient shannonDBClient, ConnectorSession session, ShannonDBSplit split, ShannonDBTableHandle table, List<ShannonDBColumnHandle> columnHandles)
     {
-        this.jdbcClient = requireNonNull(jdbcClient, "jdbcClient is null");
+        this.shannonDBClient = requireNonNull(shannonDBClient, "shannonDBClient is null");
         this.split = requireNonNull(split, "split is null");
 
         this.table = requireNonNull(table, "table is null");
@@ -57,6 +57,6 @@ public class JdbcRecordSet
     @Override
     public RecordCursor cursor()
     {
-        return new JdbcRecordCursor(jdbcClient, session, split, table, columnHandles);
+        return new ShannonDBRecordCursor(shannonDBClient, session, split, table, columnHandles);
     }
 }
