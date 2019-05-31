@@ -26,6 +26,6 @@ public interface BooleanReadFunction
         return boolean.class;
     }
 
-    boolean readBoolean(ResultSet resultSet, int columnIndex)
+    boolean readBoolean(ShannonDBResultSet resultSet, int columnIndex)
             throws SQLException;
 }

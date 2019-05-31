@@ -21,6 +21,7 @@ public class ShannonDBSocketClient implements AutoCloseable
 
     public ShannonDBResultSet getSchemas()
     {
+
     }
 
     public ShannonDBResultSet getColumns(ShannonDBTableHandle tableHandle)
@@ -39,7 +40,7 @@ public class ShannonDBSocketClient implements AutoCloseable
     {
     }
 
-    public ShannonDBResultSet getTables(String catalog, String s, String s1, String[] strings)
+    public ShannonDBResultSet getTables(String catalog, String schema, String table, String[] strings)
     {
     }
 

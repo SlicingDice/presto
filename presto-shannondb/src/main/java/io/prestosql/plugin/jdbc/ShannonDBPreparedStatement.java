@@ -2,7 +2,6 @@ package io.prestosql.plugin.jdbc;
 
 import java.math.BigDecimal;
 import java.sql.Date;
-import java.sql.ResultSet;
 import java.sql.Time;
 import java.sql.Timestamp;
 
@@ -27,8 +26,9 @@ public class ShannonDBPreparedStatement implements AutoCloseable
 
     }
 
-    public ResultSet executeQuery()
+    public ShannonDBResultSet executeQuery()
     {
+        return null;
     }
 
     public static void setBoolean(ShannonDBPreparedStatement shannonDBPreparedStatement, int i, boolean b)

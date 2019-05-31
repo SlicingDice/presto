@@ -26,6 +26,6 @@ public interface LongReadFunction
         return long.class;
     }
 
-    long readLong(ResultSet resultSet, int columnIndex)
+    long readLong(ShannonDBResultSet resultSet, int columnIndex)
             throws SQLException;
 }
