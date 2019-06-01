@@ -539,7 +539,7 @@ public class BaseShannonDBClient
     public ShannonDBPreparedStatement getShannonDBPreparedStatement(ShannonDBSocketClient shannonDBSocketClient, String sql)
             throws Exception
     {
-        return shannonDBSocketClient.prepareStatement(sql);
+        return shannonDBSocketClient.prepareStatement(shannonDBSocketClient, sql);
     }
 
     protected ShannonDBResultSet getTables(ShannonDBSocketClient shannonDBSocketClient, Optional<String> schemaName, Optional<String> tableName)

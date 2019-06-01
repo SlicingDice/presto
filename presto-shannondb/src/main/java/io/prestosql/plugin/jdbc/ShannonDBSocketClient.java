@@ -44,7 +44,7 @@ public class ShannonDBSocketClient implements AutoCloseable
     {
     }
 
-    public void execute(String query)
+    public ShannonDBResultSet execute(String query)
     {
     }
 
@@ -52,8 +52,11 @@ public class ShannonDBSocketClient implements AutoCloseable
     {
     }
 
-    public ShannonDBPreparedStatement prepareStatement(String sql)
+    public ShannonDBPreparedStatement prepareStatement(ShannonDBSocketClient shannonDBSocketClient, String sql)
     {
+        ShannonDBPreparedStatement statement = new ShannonDBPreparedStatement(shannonDBSocketClient);
+        statement.prepareQuery(sql);
+
     }
 
     public void commit()

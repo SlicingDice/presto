@@ -23,8 +23,6 @@ import io.prestosql.spi.connector.ConnectorPageSink;
 import io.prestosql.spi.connector.ConnectorSession;
 import io.prestosql.spi.type.Type;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLNonTransientException;
 import java.util.Collection;
 import java.util.List;
@@ -58,7 +56,7 @@ public class ShannonDBPageSink
 
         try {
             connection.setAutoCommit(false);
-            statement = connection.prepareStatement(shannonDBClient.buildInsertSql(handle));
+            statement = connection.prepareStatement(shannonDBSocketClient, shannonDBClient.buildInsertSql(handle));
         }
         catch (Exception e) {
             closeWithSuppression(connection, e);
