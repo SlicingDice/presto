@@ -13,7 +13,6 @@
  */
 package io.prestosql.plugin.jdbc;
 
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 public interface LongWriteFunction

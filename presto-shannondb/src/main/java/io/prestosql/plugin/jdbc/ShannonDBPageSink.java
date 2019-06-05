@@ -56,7 +56,7 @@ public class ShannonDBPageSink
 
         try {
             connection.setAutoCommit(false);
-            statement = connection.prepareStatement(shannonDBSocketClient, shannonDBClient.buildInsertSql(handle));
+            statement = connection.prepareStatement(shannonDBClient.getShannonDBSocketClient(ShannonDBIdentity.from(session), handle), shannonDBClient.buildInsertSql(handle));
         }
         catch (Exception e) {
             closeWithSuppression(connection, e);

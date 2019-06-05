@@ -15,7 +15,6 @@ package io.prestosql.plugin.jdbc;
 
 import io.airlift.slice.Slice;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
 @FunctionalInterface
