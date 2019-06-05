@@ -13,8 +13,6 @@
  */
 package io.prestosql.plugin.jdbc;
 
-import java.net.Socket;
-
 @FunctionalInterface
 public interface SocketFactory
         extends AutoCloseable

@@ -13,7 +13,6 @@
  */
 package io.prestosql.plugin.jdbc;
 
-import java.net.Socket;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Optional;

@@ -15,7 +15,6 @@ package io.prestosql.plugin.jdbc;
 
 import io.prestosql.spi.block.Block;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
 @FunctionalInterface

@@ -13,7 +13,6 @@
  */
 package io.prestosql.plugin.jdbc;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
 @FunctionalInterface

@@ -15,7 +15,6 @@ package io.prestosql.plugin.jdbc;
 
 import io.airlift.slice.Slice;
 
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 public interface SliceWriteFunction

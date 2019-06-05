@@ -23,7 +23,6 @@ import io.prestosql.spi.predicate.TupleDomain;
 import io.prestosql.spi.statistics.TableStatistics;
 import io.prestosql.spi.type.Type;
 
-import java.net.Socket;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
