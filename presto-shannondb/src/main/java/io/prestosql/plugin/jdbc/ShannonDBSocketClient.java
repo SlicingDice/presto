@@ -63,7 +63,7 @@ public class ShannonDBSocketClient
             final long requestId = 1;
 
             ObjectMapper objectMapper = new ObjectMapper();
-            byte[] compressedJson = Snappy.compress(objectMapper.writeValueAsString(request));
+            byte[] compressedJson = Snappy.compress("sql " + objectMapper.writeValueAsString(request));
             outputStream.writeLong(requestId);
             outputStream.writeInt(compressedJson.length);
             outputStream.write(compressedJson);

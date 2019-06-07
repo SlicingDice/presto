@@ -35,6 +35,10 @@ public class ShannonDBPlugin
         this.module = requireNonNull(module, "module is null");
     }
 
+    public ShannonDBPlugin() {
+        this ("shannondb", new ShannonDBModule());
+    }
+
     @Override
     public Iterable<ConnectorFactory> getConnectorFactories()
     {

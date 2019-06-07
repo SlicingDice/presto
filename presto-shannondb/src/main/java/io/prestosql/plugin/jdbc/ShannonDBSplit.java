@@ -45,7 +45,7 @@ public class ShannonDBSplit
     @Override
     public boolean isRemotelyAccessible()
     {
-        return true;
+        return false;
     }
 
     @Override
