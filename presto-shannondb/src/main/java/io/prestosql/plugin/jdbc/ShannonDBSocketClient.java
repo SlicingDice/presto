@@ -31,10 +31,12 @@ public class ShannonDBSocketClient
 {
     private Socket socket;
     private Properties connectionProperties;
+    private ShannonDBMysqlReader mysqlReader;
 
     public ShannonDBSocketClient connect(String connectionUrl, Properties connectionProperties)
     {
         this.connectionProperties = connectionProperties;
+        this.mysqlReader = new ShannonDBMysqlReader();
         if (socket == null || socket.isClosed()) {
             try {
                 socket = new Socket("127.0.0.1", 1234);
@@ -96,18 +98,12 @@ public class ShannonDBSocketClient
 
     public ShannonDBResultSet getSchemas()
     {
-        SocketRequest request = new SocketRequest();
-        request.setQuery("show schemas from " + connectionProperties.getProperty("catalog"));
-        request.setProject_id("" + connectionProperties.getProperty("project_id"));
-        return send(request);
+        return mysqlReader.getSchemas(connectionProperties);
     }
 
     public ShannonDBResultSet getColumns(ShannonDBTableHandle tableHandle)
     {
-        SocketRequest request = new SocketRequest();
-        request.setProject_id("" + connectionProperties.getProperty("project_id"));
-        request.setQuery("show columns from " + tableHandle.getTableName());
-        return send(request);
+        return mysqlReader.getColumns(tableHandle, connectionProperties);
     }
 
     public boolean storesUpperCaseIdentifiers()
@@ -127,10 +123,7 @@ public class ShannonDBSocketClient
 
     public ShannonDBResultSet getTables(String catalog, String schema, String table, String[] strings)
     {
-        SocketRequest request = new SocketRequest();
-        request.setProject_id("" + connectionProperties.getProperty("project_id"));
-        request.setQuery("show tables from " + schema);
-        return send(request);
+        return mysqlReader.getTables(catalog, schema, table, connectionProperties);
     }
 
     public ShannonDBResultSet execute(String query)
@@ -143,10 +136,7 @@ public class ShannonDBSocketClient
 
     public ShannonDBResultSet getColumns(String catalogName, String schema, String table, Object o)
     {
-        SocketRequest request = new SocketRequest();
-        request.setProject_id("" + connectionProperties.getProperty("project_id"));
-        request.setQuery("show columns from " + table);
-        return send(request);
+        return mysqlReader.getColumns(catalogName, schema, table, connectionProperties);
     }
 
     public ShannonDBPreparedStatement prepareStatement(ShannonDBSocketClient shannonDBSocketClient, String sql)
