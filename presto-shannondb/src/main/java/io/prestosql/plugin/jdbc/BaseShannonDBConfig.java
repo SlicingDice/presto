@@ -25,53 +25,10 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class BaseShannonDBConfig
 {
-    private String connectionUrl;
-    private String connectionUser;
-    private String connectionPassword;
     private String userCredentialName;
     private String passwordCredentialName;
     private boolean caseInsensitiveNameMatching;
     private Duration caseInsensitiveNameMatchingCacheTtl = new Duration(1, MINUTES);
-
-    @NotNull
-    public String getConnectionUrl()
-    {
-        return connectionUrl;
-    }
-
-    @Config("connection-url")
-    public BaseShannonDBConfig setConnectionUrl(String connectionUrl)
-    {
-        this.connectionUrl = connectionUrl;
-        return this;
-    }
-
-    @Nullable
-    public String getConnectionUser()
-    {
-        return connectionUser;
-    }
-
-    @Config("connection-user")
-    public BaseShannonDBConfig setConnectionUser(String connectionUser)
-    {
-        this.connectionUser = connectionUser;
-        return this;
-    }
-
-    @Nullable
-    public String getConnectionPassword()
-    {
-        return connectionPassword;
-    }
-
-    @Config("connection-password")
-    @ConfigSecuritySensitive
-    public BaseShannonDBConfig setConnectionPassword(String connectionPassword)
-    {
-        this.connectionPassword = connectionPassword;
-        return this;
-    }
 
     @Nullable
     public String getUserCredentialName()

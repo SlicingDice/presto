@@ -31,11 +31,15 @@ public class ShannonDBModule
     {
         newOptionalBinder(binder, ConnectorAccessControl.class);
         newSetBinder(binder, Procedure.class);
+        binder.bind(ShannonDBClient.class).to(BaseShannonDBClient.class).in(Scopes.SINGLETON);
         binder.bind(ShannonDBMetadataFactory.class).in(Scopes.SINGLETON);
+        binder.bind(BaseShannonDBConfig.class).in(Scopes.SINGLETON);
         binder.bind(ShannonDBSplitManager.class).in(Scopes.SINGLETON);
         binder.bind(ShannonDBRecordSetProvider.class).in(Scopes.SINGLETON);
         binder.bind(ShannonDBPageSinkProvider.class).in(Scopes.SINGLETON);
         binder.bind(ShannonDBConnector.class).in(Scopes.SINGLETON);
+        binder.bind(SocketFactory.class).to(ShannonDBSocketClientSocketFactory.class).in(Scopes.SINGLETON);
+        binder.bind(ShannonDBSocketClient.class).in(Scopes.SINGLETON);
         configBinder(binder).bindConfig(ShannonDBMetadataConfig.class);
     }
 }

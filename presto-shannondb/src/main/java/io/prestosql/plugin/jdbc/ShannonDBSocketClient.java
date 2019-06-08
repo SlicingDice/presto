@@ -16,6 +16,8 @@ package io.prestosql.plugin.jdbc;
 import com.facebook.presto.jdbc.internal.jackson.databind.ObjectMapper;
 import org.xerial.snappy.Snappy;
 
+import javax.inject.Inject;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -33,7 +35,11 @@ public class ShannonDBSocketClient
     private Properties connectionProperties;
     private ShannonDBMysqlReader mysqlReader;
 
-    public ShannonDBSocketClient connect(String connectionUrl, Properties connectionProperties)
+    @Inject
+    public ShannonDBSocketClient(){
+    }
+
+    public ShannonDBSocketClient connect(Properties connectionProperties)
     {
         this.connectionProperties = connectionProperties;
         this.mysqlReader = new ShannonDBMysqlReader();
@@ -99,11 +105,6 @@ public class ShannonDBSocketClient
     public ShannonDBResultSet getSchemas()
     {
         return mysqlReader.getSchemas(connectionProperties);
-    }
-
-    public ShannonDBResultSet getColumns(ShannonDBTableHandle tableHandle)
-    {
-        return mysqlReader.getColumns(tableHandle, connectionProperties);
     }
 
     public boolean storesUpperCaseIdentifiers()
