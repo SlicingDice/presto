@@ -37,6 +37,7 @@ import io.prestosql.spi.type.Type;
 import io.prestosql.spi.type.VarcharType;
 
 import javax.annotation.PreDestroy;
+import javax.inject.Inject;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -113,6 +114,11 @@ public class BaseShannonDBClient
     protected final boolean caseInsensitiveNameMatching;
     protected final Cache<ShannonDBIdentity, Map<String, String>> remoteSchemaNames;
     protected final Cache<RemoteTableNameCacheKey, Map<String, String>> remoteTableNames;
+
+    @Inject
+    public BaseShannonDBClient(BaseShannonDBConfig config, SocketFactory socketFactory){
+        this(config, "\"", socketFactory);
+    }
 
     public BaseShannonDBClient(BaseShannonDBConfig config, String identifierQuote, SocketFactory socketFactory)
     {

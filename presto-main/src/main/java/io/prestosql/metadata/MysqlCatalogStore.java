@@ -150,9 +150,11 @@ public class MysqlCatalogStore implements CatalogStore
         checkState(connectorName != null, "Catalog configuration %s does not contain connector.name", model);
 
         Map<String, String> properties = new HashMap<>();
-        properties.put("connection-url", model.getUrl());
-        properties.put("connection-user", model.getUser());
-        properties.put("connection-password", model.getPassword());
+        if (!connectorName.equals("shannondb")){
+            properties.put("connection-url", model.getUrl());
+            properties.put("connection-user", model.getUser());
+            properties.put("connection-password", model.getPassword());
+        }
 
         connectorManager.createConnection(catalogName, connectorName, ImmutableMap.copyOf(properties));
         log.info("-- Added catalog %s using connector %s --", catalogName, connectorName);

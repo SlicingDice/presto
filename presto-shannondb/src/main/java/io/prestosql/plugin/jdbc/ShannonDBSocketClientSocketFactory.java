@@ -13,6 +13,8 @@
  */
 package io.prestosql.plugin.jdbc;
 
+import javax.inject.Inject;
+
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Optional;
@@ -25,16 +27,15 @@ public class ShannonDBSocketClientSocketFactory
         implements SocketFactory
 {
     private final ShannonDBSocketClient shannonDBSocketClient;
-    private final String connectionUrl;
     private final Properties connectionProperties;
     private final Optional<String> userCredentialName;
     private final Optional<String> passwordCredentialName;
 
+    @Inject
     public ShannonDBSocketClientSocketFactory(ShannonDBSocketClient shannonDBSocketClient, BaseShannonDBConfig config)
     {
         this(
                 shannonDBSocketClient,
-                config.getConnectionUrl(),
                 Optional.ofNullable(config.getUserCredentialName()),
                 Optional.ofNullable(config.getPasswordCredentialName()),
                 basicConnectionProperties(config));
@@ -43,19 +44,12 @@ public class ShannonDBSocketClientSocketFactory
     public static Properties basicConnectionProperties(BaseShannonDBConfig config)
     {
         Properties connectionProperties = new Properties();
-        if (config.getConnectionUser() != null) {
-            connectionProperties.setProperty("user", config.getConnectionUser());
-        }
-        if (config.getConnectionPassword() != null) {
-            connectionProperties.setProperty("password", config.getConnectionPassword());
-        }
         return connectionProperties;
     }
 
-    public ShannonDBSocketClientSocketFactory(ShannonDBSocketClient shannonDBSocketClient, String connectionUrl, Optional<String> userCredentialName, Optional<String> passwordCredentialName, Properties connectionProperties)
+    public ShannonDBSocketClientSocketFactory(ShannonDBSocketClient shannonDBSocketClient, Optional<String> userCredentialName, Optional<String> passwordCredentialName, Properties connectionProperties)
     {
         this.shannonDBSocketClient = requireNonNull(shannonDBSocketClient, "shannonDBSocketClient is null");
-        this.connectionUrl = requireNonNull(connectionUrl, "connectionUrl is null");
         this.connectionProperties = new Properties();
         this.connectionProperties.putAll(requireNonNull(connectionProperties, "basicConnectionProperties is null"));
         this.userCredentialName = requireNonNull(userCredentialName, "userCredentialName is null");
@@ -69,7 +63,7 @@ public class ShannonDBSocketClientSocketFactory
         userCredentialName.ifPresent(credentialName -> setConnectionProperty(connectionProperties, identity.getExtraCredentials(), credentialName, "user"));
         passwordCredentialName.ifPresent(credentialName -> setConnectionProperty(connectionProperties, identity.getExtraCredentials(), credentialName, "password"));
 
-        ShannonDBSocketClient socket = shannonDBSocketClient.connect(connectionUrl, connectionProperties);
+        ShannonDBSocketClient socket = shannonDBSocketClient.connect(connectionProperties);
         checkState(socket != null, "ShannonDBSocketClient returned null connection");
         return socket;
     }
