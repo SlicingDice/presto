@@ -218,7 +218,7 @@ public class BaseShannonDBClient
     public List<ShannonDBColumnHandle> getColumns(ConnectorSession session, ShannonDBTableHandle tableHandle)
     {
         try (ShannonDBSocketClient shannonDBSocketClient = shannonDBSocketClientFactory.openSocket(ShannonDBIdentity.from(session))) {
-            try (ShannonDBResultSet resultSet = shannonDBSocketClient.getColumns(tableHandle)) {
+            try (ShannonDBResultSet resultSet = getColumns(tableHandle, shannonDBSocketClient)) {
                 List<ShannonDBColumnHandle> columns = new ArrayList<>();
                 while (resultSet.next()) {
                     ShannonDBTypeHandle typeHandle = new ShannonDBTypeHandle(
@@ -774,7 +774,7 @@ public class BaseShannonDBClient
         return name;
     }
 
-    protected static ShannonDBResultSet getColumns(ShannonDBTableHandle tableHandle, ShannonDBSocketClient shannonDBSocketClient)
+    protected ShannonDBResultSet getColumns(ShannonDBTableHandle tableHandle, ShannonDBSocketClient shannonDBSocketClient)
             throws Exception
     {
         Optional<String> escape = shannonDBSocketClient.getSearchStringEscape();
