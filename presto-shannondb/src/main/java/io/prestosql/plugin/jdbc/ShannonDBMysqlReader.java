@@ -27,10 +27,10 @@ import java.util.Properties;
 public class ShannonDBMysqlReader
 {
     private static final String DRIVER = "com.mysql.jdbc.Driver";
-    private static String URL = "jdbc:mysql://localhost:3306/slicing_dice";
+    private static String URL = "jdbc:mysql://179.95.190.123:3306/slicing_dice";
 
     private static String USER = "root";
-    private static String PASS = "";
+    private static String PASS = "root";
 
     public ShannonDBMysqlReader()
     {
@@ -54,7 +54,7 @@ public class ShannonDBMysqlReader
         List<Map<String, Object>> list = new ArrayList<>();
         Map<String, Object> schemaMap = new HashMap<>();
 
-        final String schema = connectionProperties.getProperty("team_id") + connectionProperties.getProperty("project_id");
+        final String schema = connectionProperties.getProperty("team_id") + "_" + connectionProperties.getProperty("project_id");
 
         schemaMap.put("TABLE_SCHEM", schema);
         list.add(schemaMap);
@@ -66,16 +66,16 @@ public class ShannonDBMysqlReader
     {
         List<Map<String, Object>> list = new ArrayList<>();
 
-        final String sql = "SELECT DISTINCT CONCAT(team_id, '_', project_id, '_', dimension) as table_name  FROM slicing_dice.ProjectField pf JOIN Project p ON p.id = pf.project_id where team_id = ? and project_id = ?";
+        final String sql = "SELECT DISTINCT CONCAT(p.team_id, '_', pf.project_id, '_', pf.dimension) as table_name  FROM slicing_dice.ProjectField pf JOIN Project p ON p.id = pf.project_id where p.team_id = ? and pf.project_id = ?";
         try (final Connection conn = DriverManager.getConnection(URL, USER, PASS);
                 final PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, connectionProperties.getProperty("team_id"));
             stmt.setString(2, connectionProperties.getProperty("project_id"));
-            final ResultSet rs = stmt.executeQuery(sql);
+            final ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 Map<String, Object> schemaMap = new HashMap<>();
                 schemaMap.put("TABLE_NAME", rs.getString("table_name"));
-                schemaMap.put("TABLE_SCHEM", rs.getString("team_id") + rs.getString("project_id"));
+                schemaMap.put("TABLE_SCHEM", connectionProperties.getProperty("team_id") + "_" +  connectionProperties.getProperty("project_id"));
                 list.add(schemaMap);
             }
         }
@@ -116,7 +116,7 @@ public class ShannonDBMysqlReader
     {
         List<Map<String, Object>> list = new ArrayList<>();
 
-        final String sql = "SELECT CASE WHEN new_format THEN CONCAT(project_id, '_', dimension, '_', api_name, '_', pf.id) ELSE CONCAT(project_id, '_', dimension, '_', api_name) END as column_name, s1search_type as column_type, CONCAT(team_id, '_', project_id) as group_name, CONCAT(team_id, '_', project_id, '_', dimension) as table_name  FROM slicing_dice.ProjectField pf JOIN Project p ON p.id = pf.project_id where team_id = ? and project_id = ? and table_name = ?";
+        final String sql = "SELECT CASE WHEN new_format THEN CONCAT(pf.project_id, '_', pf.dimension, '_', pf.api_name, '_', pf.id) ELSE CONCAT(pf.project_id, '_', pf.dimension, '_', pf.api_name) END as column_name, pf.s1search_type as column_type, CONCAT(pf.team_id, '_', pf.project_id) as group_name, CONCAT(pf.team_id, '_', pf.project_id, '_', pf.dimension) as table_name  FROM slicing_dice.ProjectField pf JOIN Project p ON p.id = pf.project_id where p.team_id = ? and pf.project_id = ? and pf.table_name = ?";
         try (final Connection conn = DriverManager.getConnection(URL, USER, PASS);
                 final PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, connectionProperties.getProperty("team_id"));

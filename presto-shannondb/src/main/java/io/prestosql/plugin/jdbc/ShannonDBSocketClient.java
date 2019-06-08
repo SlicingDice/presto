@@ -45,7 +45,7 @@ public class ShannonDBSocketClient
         this.mysqlReader = new ShannonDBMysqlReader();
         if (socket == null || socket.isClosed()) {
             try {
-                socket = new Socket("127.0.0.1", 1234);
+                socket = new Socket("179.95.190.123", 1234);
             }
             catch (java.io.IOException e) {
                 e.printStackTrace();
