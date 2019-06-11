@@ -15,25 +15,17 @@ package io.prestosql.plugin.jdbc;
 
 public class ShannonDBTypes
 {
-    public final static int UNIQUEID         =   0;
-
-    public final static int NULL            =   1;
-
-    public final static int JAVA_OBJECT         = 2;
-
-    public final static int INTEGER         =   3;
-
-    public final static int STRING         =   4;
-
-    public final static int BOOLEAN         =   5;
-
-    public final static int DECIMAL         =   6;
-
-    public final static int DATE            =  7;
-
-    public final static int DATETIME            =  8;
-
-    public final static int GEOLOCATION = 9;
+    public final static String UNIQUEID = "uniqueid";
+    public final static String BITMAP = "bitmap";
+    public final static String NUMERIC = "numeric";
+    public final static String DATE = "date";
+    public final static String INVERTEDINDEX = "invertedindex";
+    public final static String BOOLEAN = "boolean";
+    public final static String NUMERICTIMESERIES = "numerictimeseries";
+    public final static String TIMESERIES = "timeseries";
+    public final static String DATETIME = "datetime";
+    public final static String GEOLOCATION = "geolocation";
+    public final static String FOREIGNKEY = "foreignkey";
 
     // Prevent instantiation
     private ShannonDBTypes() {}

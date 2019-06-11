@@ -382,65 +382,32 @@ public final class StandardColumnMappings
     {
         int columnSize = type.getColumnSize();
         switch (type.getShannonDBType()) {
-            case Types.BIT:
-            case Types.BOOLEAN:
+            case ShannonDBTypes.BOOLEAN:
                 return Optional.of(booleanColumnMapping());
-
-            case Types.TINYINT:
-                return Optional.of(tinyintColumnMapping());
-
-            case Types.SMALLINT:
-                return Optional.of(smallintColumnMapping());
-
-            case Types.INTEGER:
-                return Optional.of(integerColumnMapping());
-
-            case Types.BIGINT:
-                return Optional.of(bigintColumnMapping());
-
-            case Types.REAL:
-                return Optional.of(realColumnMapping());
-
-            case Types.FLOAT:
-            case Types.DOUBLE:
-                return Optional.of(doubleColumnMapping());
-
-            case Types.NUMERIC:
-            case Types.DECIMAL:
+            case ShannonDBTypes.NUMERIC:
                 int decimalDigits = type.getDecimalDigits();
-                int precision = columnSize + max(-decimalDigits, 0); // Map decimal(p, -s) (negative scale) to decimal(p+s, 0).
-                if (precision > Decimals.MAX_PRECISION) {
-                    return Optional.empty();
+
+                if (decimalDigits == 0) {
+                    return Optional.of(integerColumnMapping());
+                } else {
+                    int precision = decimalDigits; // Map decimal(p, -s) (negative scale) to decimal(p+s, 0).
+                    if (precision > Decimals.MAX_PRECISION) {
+                        return Optional.empty();
+                    }
+                    return Optional.of(decimalColumnMapping(createDecimalType(precision, max(decimalDigits, 0))));
                 }
-                return Optional.of(decimalColumnMapping(createDecimalType(precision, max(decimalDigits, 0))));
-
-            case Types.CHAR:
-            case Types.NCHAR:
-                // TODO this is wrong, we're going to construct malformed Slice representation if source > charLength
-                int charLength = min(columnSize, CharType.MAX_LENGTH);
-                return Optional.of(charColumnMapping(createCharType(charLength)));
-
-            case Types.VARCHAR:
-            case Types.NVARCHAR:
-            case Types.LONGVARCHAR:
-            case Types.LONGNVARCHAR:
+            case ShannonDBTypes.BITMAP:
+            case ShannonDBTypes.UNIQUEID:
+            case ShannonDBTypes.GEOLOCATION:
+            case ShannonDBTypes.FOREIGNKEY:
+            case ShannonDBTypes.INVERTEDINDEX:
                 if (columnSize > VarcharType.MAX_LENGTH) {
                     return Optional.of(varcharColumnMapping(createUnboundedVarcharType()));
                 }
                 return Optional.of(varcharColumnMapping(createVarcharType(columnSize)));
-
-            case Types.BINARY:
-            case Types.VARBINARY:
-            case Types.LONGVARBINARY:
-                return Optional.of(varbinaryColumnMapping());
-
-            case Types.DATE:
+            case ShannonDBTypes.DATE:
                 return Optional.of(dateColumnMapping());
-
-            case Types.TIME:
-                return Optional.of(timeColumnMapping());
-
-            case Types.TIMESTAMP:
+            case ShannonDBTypes.DATETIME:
                 // TODO default to `timestampColumnMapping`
                 return Optional.of(timestampColumnMappingUsingSqlTimestamp(session));
         }

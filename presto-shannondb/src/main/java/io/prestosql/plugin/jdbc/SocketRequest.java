@@ -15,7 +15,7 @@ package io.prestosql.plugin.jdbc;
 
 public class SocketRequest
 {
-    private String query;
+    private String sql;
     private boolean translate_values = true;
     private String project_id;
 
@@ -24,9 +24,9 @@ public class SocketRequest
         return project_id;
     }
 
-    public String getQuery()
+    public String getSql()
     {
-        return query;
+        return sql;
     }
 
     public boolean isTranslate_values()
@@ -39,9 +39,9 @@ public class SocketRequest
         this.project_id = project_id;
     }
 
-    public void setQuery(String query)
+    public void setSql(String sql)
     {
-        this.query = query;
+        this.sql = sql;
     }
 
     public void setTranslate_values(boolean translate_values)

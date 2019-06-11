@@ -27,7 +27,7 @@ import java.util.Properties;
 public class ShannonDBMysqlReader
 {
     private static final String DRIVER = "com.mysql.jdbc.Driver";
-    private static String URL = "jdbc:mysql://179.95.190.123:3306/slicing_dice";
+    private static String URL = "jdbc:mysql://localhost:3306/slicing_dice";
 
     private static String USER = "root";
     private static String PASS = "root";
@@ -66,11 +66,22 @@ public class ShannonDBMysqlReader
     {
         List<Map<String, Object>> list = new ArrayList<>();
 
-        final String sql = "SELECT DISTINCT CONCAT(p.team_id, '_', pf.project_id, '_', pf.dimension) as table_name  FROM slicing_dice.ProjectField pf JOIN Project p ON p.id = pf.project_id where p.team_id = ? and pf.project_id = ?";
+        String sql = "SELECT DISTINCT CONCAT(p.team_id, '_', pf.project_id, '_', pf.dimension) as table_name  FROM slicing_dice.ProjectField pf JOIN Project p ON p.id = pf.project_id where p.team_id = ? and pf.project_id = ?";
+
+        String dimension = null;
+        if (table != null) {
+            final String[] tableSplit = table.split("_");
+            dimension = tableSplit[tableSplit.length - 1];
+            sql += " and pf.dimension = ?";
+        }
+
         try (final Connection conn = DriverManager.getConnection(URL, USER, PASS);
                 final PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, connectionProperties.getProperty("team_id"));
             stmt.setString(2, connectionProperties.getProperty("project_id"));
+            if (dimension != null) {
+                stmt.setString(3, dimension);
+            }
             final ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 Map<String, Object> schemaMap = new HashMap<>();
@@ -116,18 +127,23 @@ public class ShannonDBMysqlReader
     {
         List<Map<String, Object>> list = new ArrayList<>();
 
-        final String sql = "SELECT CASE WHEN new_format THEN CONCAT(pf.project_id, '_', pf.dimension, '_', pf.api_name, '_', pf.id) ELSE CONCAT(pf.project_id, '_', pf.dimension, '_', pf.api_name) END as column_name, pf.s1search_type as column_type, CONCAT(pf.team_id, '_', pf.project_id) as group_name, CONCAT(pf.team_id, '_', pf.project_id, '_', pf.dimension) as table_name  FROM slicing_dice.ProjectField pf JOIN Project p ON p.id = pf.project_id where p.team_id = ? and pf.project_id = ? and pf.table_name = ?";
+        final String sql = "SELECT CASE WHEN new_format AND pf.api_name != 'entity-id' THEN CONCAT(pf.api_name, '_', pf.id) ELSE CONCAT(pf.api_name) END as column_name, pf.s1search_type as column_type, CONCAT(p.team_id, '_', pf.project_id) as group_name, CONCAT(p.team_id, '_', pf.project_id, '_', pf.dimension) as table_name, pf.decimal_places FROM slicing_dice.ProjectField pf JOIN Project p ON p.id = pf.project_id where p.team_id = ? and pf.project_id = ?  and pf.dimension = ?";
+
+        final String[] tableSplit = table.split("_");
+        final String dimension = tableSplit[tableSplit.length - 1];
+
         try (final Connection conn = DriverManager.getConnection(URL, USER, PASS);
                 final PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, connectionProperties.getProperty("team_id"));
             stmt.setString(2, connectionProperties.getProperty("project_id"));
-            stmt.setString(3, table);
-            final ResultSet rs = stmt.executeQuery(sql);
+            stmt.setString(3, dimension);
+            final ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 Map<String, Object> schemaMap = new HashMap<>();
                 schemaMap.put("DATA_TYPE", rs.getString("column_type"));
                 schemaMap.put("TYPE_NAME", rs.getString("column_type"));
                 schemaMap.put("COLUMN_NAME", rs.getString("column_name"));
+                schemaMap.put("DECIMAL_DIGITS", rs.getInt("decimal_places"));
                 list.add(schemaMap);
             }
         }
