@@ -107,12 +107,6 @@ public class QueryBuilder
         }
 
         sql.append(" FROM ");
-        if (!isNullOrEmpty(catalog)) {
-            sql.append(quote(catalog)).append('.');
-        }
-        if (!isNullOrEmpty(schema)) {
-            sql.append(quote(schema)).append('.');
-        }
         sql.append(quote(table));
 
         List<TypeAndValue> accumulator = new ArrayList<>();

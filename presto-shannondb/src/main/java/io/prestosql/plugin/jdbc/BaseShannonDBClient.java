@@ -228,16 +228,16 @@ public class BaseShannonDBClient
                 List<ShannonDBColumnHandle> columns = new ArrayList<>();
                 while (resultSet.next()) {
                     ShannonDBTypeHandle typeHandle = new ShannonDBTypeHandle(
-                            resultSet.getInt("DATA_TYPE"),
+                            resultSet.getString("DATA_TYPE"),
                             Optional.ofNullable(resultSet.getString("TYPE_NAME")),
-                            resultSet.getInt("COLUMN_SIZE"),
+                            1024,
                             resultSet.getInt("DECIMAL_DIGITS"),
                             Optional.empty());
                     Optional<ColumnMapping> columnMapping = toPrestoType(session, typeHandle);
                     // skip unsupported column types
                     if (columnMapping.isPresent()) {
                         String columnName = resultSet.getString("COLUMN_NAME");
-                        boolean nullable = (resultSet.getInt("NULLABLE") != columnNoNulls);
+                        boolean nullable = true;
                         columns.add(new ShannonDBColumnHandle(columnName, typeHandle, columnMapping.get().getType(), nullable));
                     }
                 }

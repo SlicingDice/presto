@@ -24,7 +24,7 @@ import static java.util.Objects.requireNonNull;
 
 public final class ShannonDBTypeHandle
 {
-    private final int shannonDBType;
+    private final String shannonDBType;
     private final Optional<String> shannonDBTypeName;
     private final int columnSize;
     private final int decimalDigits;
@@ -32,7 +32,7 @@ public final class ShannonDBTypeHandle
 
     @JsonCreator
     public ShannonDBTypeHandle(
-            @JsonProperty("shannonDBType") int shannonDBType,
+            @JsonProperty("shannonDBType") String shannonDBType,
             @JsonProperty("shannonDBTypeName") Optional<String> shannonDBTypeName,
             @JsonProperty("columnSize") int columnSize,
             @JsonProperty("decimalDigits") int decimalDigits,
@@ -46,7 +46,7 @@ public final class ShannonDBTypeHandle
     }
 
     @JsonProperty
-    public int getShannonDBType()
+    public String getShannonDBType()
     {
         return shannonDBType;
     }
