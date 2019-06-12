@@ -92,9 +92,11 @@ public class ShannonDBSocketClient
 
             String data = new String(messageBytes, Charset.forName("UTF-8"));
 
-            List<Map<String, Object>> list = objectMapper.readValue(data, List.class);
+            final Map<String, Object> list = objectMapper.readValue(data, Map.class);
 
-            return new ShannonDBResultSet(list);
+            final List<Map<Object, Object>> result = (List<Map<Object, Object>>) list.get("result");
+
+            return new ShannonDBResultSet(result);
         }
         catch (IOException e) {
             e.printStackTrace();

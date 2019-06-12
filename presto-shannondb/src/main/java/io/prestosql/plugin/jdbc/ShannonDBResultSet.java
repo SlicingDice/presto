@@ -25,10 +25,10 @@ import java.util.Map;
 
 public class ShannonDBResultSet implements AutoCloseable
 {
-    private List<Map<String, Object>> list = new ArrayList<>();
+    private final List<Map<Object, Object>> list;
     private int index = -1;
 
-    public ShannonDBResultSet(List<Map<String, Object>> list){
+    public ShannonDBResultSet(final List<Map<Object, Object>> list){
         this.list = list;
     }
 
@@ -50,7 +50,7 @@ public class ShannonDBResultSet implements AutoCloseable
 
     public boolean wasNull(int field)
     {
-        Map<String, Object> map = list.get(index);
+        final Map<Object, Object> map = list.get(index);
         Iterator<Object> iterator = map.values().iterator();
         Object lastValue = null;
         for (int x = 0; x <= field; x++){
@@ -127,7 +127,7 @@ public class ShannonDBResultSet implements AutoCloseable
 
     public long getInt(int columnIndex)
     {
-        return (long) list.get(index).get(columnIndex);
+        return Long.parseLong(list.get(index).get(String.valueOf(columnIndex)).toString());
     }
 
     public long getLong(int columnIndex)
