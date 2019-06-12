@@ -24,9 +24,7 @@ import io.prestosql.spi.PrestoException;
 import io.prestosql.spi.connector.ColumnHandle;
 import io.prestosql.spi.connector.ColumnMetadata;
 import io.prestosql.spi.connector.ConnectorSession;
-import io.prestosql.spi.connector.ConnectorSplitSource;
 import io.prestosql.spi.connector.ConnectorTableMetadata;
-import io.prestosql.spi.connector.FixedSplitSource;
 import io.prestosql.spi.connector.SchemaTableName;
 import io.prestosql.spi.connector.TableNotFoundException;
 import io.prestosql.spi.predicate.TupleDomain;
@@ -86,7 +84,6 @@ import static io.prestosql.spi.type.VarbinaryType.VARBINARY;
 import static io.prestosql.spi.type.Varchars.isVarcharType;
 import static java.lang.String.format;
 import static java.lang.String.join;
-import static java.sql.DatabaseMetaData.columnNoNulls;
 import static java.util.Collections.nCopies;
 import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
@@ -257,12 +254,6 @@ public class BaseShannonDBClient
     public Optional<ColumnMapping> toPrestoType(ConnectorSession session, ShannonDBTypeHandle typeHandle)
     {
         return jdbcTypeToPrestoType(session, typeHandle);
-    }
-
-    @Override
-    public ConnectorSplitSource getSplits(ShannonDBIdentity identity, ShannonDBTableHandle tableHandle)
-    {
-        return new FixedSplitSource(ImmutableList.of(new ShannonDBSplit(Optional.empty())));
     }
 
     @Override
