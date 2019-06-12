@@ -51,6 +51,7 @@ public class ShannonDBSplit
         return true;
     }
 
+    @JsonProperty("addresses")
     @Override
     public List<HostAddress> getAddresses()
     {
