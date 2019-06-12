@@ -51,8 +51,8 @@ public class ShannonDBMysqlReader
 
     public ShannonDBResultSet getSchemas(Properties connectionProperties)
     {
-        List<Map<String, Object>> list = new ArrayList<>();
-        Map<String, Object> schemaMap = new HashMap<>();
+        List<Map<Object, Object>> list = new ArrayList<>();
+        Map<Object, Object> schemaMap = new HashMap<>();
 
         final String schema = connectionProperties.getProperty("team_id") + "_" + connectionProperties.getProperty("project_id");
 
@@ -64,7 +64,7 @@ public class ShannonDBMysqlReader
 
     public ShannonDBResultSet getTables(String catalog, String schema, String table, Properties connectionProperties)
     {
-        List<Map<String, Object>> list = new ArrayList<>();
+        List<Map<Object, Object>> list = new ArrayList<>();
 
         String sql = "SELECT DISTINCT CONCAT(p.team_id, '_', pf.project_id, '_', pf.dimension) as table_name  FROM slicing_dice.ProjectField pf JOIN Project p ON p.id = pf.project_id where p.team_id = ? and pf.project_id = ?";
 
@@ -84,7 +84,7 @@ public class ShannonDBMysqlReader
             }
             final ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
-                Map<String, Object> schemaMap = new HashMap<>();
+                Map<Object, Object> schemaMap = new HashMap<>();
                 schemaMap.put("TABLE_NAME", rs.getString("table_name"));
                 schemaMap.put("TABLE_SCHEM", connectionProperties.getProperty("team_id") + "_" +  connectionProperties.getProperty("project_id"));
                 list.add(schemaMap);
@@ -99,7 +99,7 @@ public class ShannonDBMysqlReader
 
     public ShannonDBResultSet getColumns(ShannonDBTableHandle tableHandle, Properties connectionProperties)
     {
-        List<Map<String, Object>> list = new ArrayList<>();
+        List<Map<Object, Object>> list = new ArrayList<>();
 
         final String sql = "SELECT CASE WHEN new_format THEN CONCAT(project_id, '_', dimension, '_', api_name, '_', pf.id) ELSE CONCAT(project_id, '_', dimension, '_', api_name) END as column_name, s1search_type as column_type, CONCAT(team_id, '_', project_id) as group_name, CONCAT(team_id, '_', project_id, '_', dimension) as table_name  FROM slicing_dice.ProjectField pf JOIN Project p ON p.id = pf.project_id where team_id = ? and project_id = ? and table_name = ?";
         try (final Connection conn = DriverManager.getConnection(URL, USER, PASS);
@@ -109,7 +109,7 @@ public class ShannonDBMysqlReader
             stmt.setString(3, tableHandle.getTableName());
             final ResultSet rs = stmt.executeQuery(sql);
             while (rs.next()) {
-                Map<String, Object> schemaMap = new HashMap<>();
+                Map<Object, Object> schemaMap = new HashMap<>();
                 schemaMap.put("DATA_TYPE", rs.getString("column_type"));
                 schemaMap.put("TYPE_NAME", rs.getString("column_type"));
                 schemaMap.put("COLUMN_NAME", rs.getString("column_name"));
@@ -125,7 +125,7 @@ public class ShannonDBMysqlReader
 
     public ShannonDBResultSet getColumns(String catalogName, String schema, String table, Properties connectionProperties)
     {
-        List<Map<String, Object>> list = new ArrayList<>();
+        List<Map<Object, Object>> list = new ArrayList<>();
 
         final String sql = "SELECT CASE WHEN new_format AND pf.api_name != 'entity-id' THEN CONCAT(pf.api_name, '_', pf.id) ELSE CONCAT(pf.api_name) END as column_name, pf.s1search_type as column_type, CONCAT(p.team_id, '_', pf.project_id) as group_name, CONCAT(p.team_id, '_', pf.project_id, '_', pf.dimension) as table_name, pf.decimal_places FROM slicing_dice.ProjectField pf JOIN Project p ON p.id = pf.project_id where p.team_id = ? and pf.project_id = ?  and pf.dimension = ?";
 
@@ -139,7 +139,7 @@ public class ShannonDBMysqlReader
             stmt.setString(3, dimension);
             final ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
-                Map<String, Object> schemaMap = new HashMap<>();
+                Map<Object, Object> schemaMap = new HashMap<>();
                 schemaMap.put("DATA_TYPE", rs.getString("column_type"));
                 schemaMap.put("TYPE_NAME", rs.getString("column_type"));
                 schemaMap.put("COLUMN_NAME", rs.getString("column_name"));
