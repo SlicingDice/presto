@@ -24,18 +24,21 @@ import static java.util.Objects.requireNonNull;
 
 public class ShannonDBIdentity
 {
+    private final ConnectorSession session;
+
     public static ShannonDBIdentity from(ConnectorSession session)
     {
-        return new ShannonDBIdentity(session.getIdentity().getUser(), session.getIdentity().getExtraCredentials());
+        return new ShannonDBIdentity(session.getIdentity().getUser(), session.getIdentity().getExtraCredentials(), session);
     }
 
     private final String user;
     private final Map<String, String> extraCredentials;
 
-    public ShannonDBIdentity(String user, Map<String, String> extraCredentials)
+    public ShannonDBIdentity(String user, Map<String, String> extraCredentials, ConnectorSession session)
     {
         this.user = requireNonNull(user, "user is null");
         this.extraCredentials = ImmutableMap.copyOf(requireNonNull(extraCredentials, "extraCredentials is null"));
+        this.session = session;
     }
 
     public String getUser()

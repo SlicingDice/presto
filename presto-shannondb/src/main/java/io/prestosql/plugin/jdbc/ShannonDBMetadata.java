@@ -146,7 +146,7 @@ public class ShannonDBMetadata
         ShannonDBTableHandle handle = (ShannonDBTableHandle) table;
 
         ImmutableList.Builder<ColumnMetadata> columnMetadata = ImmutableList.builder();
-        for (ShannonDBColumnHandle column : shannonDBClient.getColumns(session, handle)) {
+        for (ShannonDBColumnHandle column : shannonDBClient.getColumns(handle, ShannonDBIdentity.from(session))) {
             columnMetadata.add(column.getColumnMetadata());
         }
         return new ConnectorTableMetadata(handle.getSchemaTableName(), columnMetadata.build());
@@ -164,7 +164,7 @@ public class ShannonDBMetadata
         ShannonDBTableHandle shannonDBTableHandle = (ShannonDBTableHandle) tableHandle;
 
         ImmutableMap.Builder<String, ColumnHandle> columnHandles = ImmutableMap.builder();
-        for (ShannonDBColumnHandle column : shannonDBClient.getColumns(session, shannonDBTableHandle)) {
+        for (ShannonDBColumnHandle column : shannonDBClient.getColumns(shannonDBTableHandle, ShannonDBIdentity.from(session))) {
             columnHandles.put(column.getColumnMetadata().getName(), column);
         }
         return columnHandles.build();

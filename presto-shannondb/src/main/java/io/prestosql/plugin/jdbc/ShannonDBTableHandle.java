@@ -40,7 +40,7 @@ public final class ShannonDBTableHandle
     private final String schemaName;
     private final String tableName;
     private final TupleDomain<ColumnHandle> constraint;
-    private final List<ShannonDBColumnHandle> columnHandles;
+    private List<ShannonDBColumnHandle> columnHandles;
     private final OptionalLong limit;
 
     public ShannonDBTableHandle(SchemaTableName schemaTableName, @Nullable String catalogName, @Nullable String schemaName, String tableName, List<ShannonDBColumnHandle> columnHandles)
@@ -64,7 +64,9 @@ public final class ShannonDBTableHandle
         this.tableName = requireNonNull(tableName, "tableName is null");
         this.constraint = requireNonNull(constraint, "constraint is null");
         this.limit = requireNonNull(limit, "limit is null");
-        this.columnHandles = ImmutableList.copyOf(columnHandles);
+        if (columnHandles != null){
+            this.columnHandles = ImmutableList.copyOf(columnHandles);
+        }
     }
 
     @JsonProperty
@@ -138,5 +140,10 @@ public final class ShannonDBTableHandle
         Joiner.on(".").skipNulls().appendTo(builder, catalogName, schemaName, tableName);
         limit.ifPresent(value -> builder.append(" limit=").append(value));
         return builder.toString();
+    }
+
+    public void setColumnHandles(List<ShannonDBColumnHandle> columnHandles)
+    {
+        this.columnHandles = columnHandles;
     }
 }

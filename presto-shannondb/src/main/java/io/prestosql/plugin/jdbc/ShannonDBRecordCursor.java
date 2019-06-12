@@ -61,7 +61,7 @@ public class ShannonDBRecordCursor
         blockReadFunctions = new BlockReadFunction[columnHandles.size()];
 
         for (int i = 0; i < this.columnHandles.length; i++) {
-            ColumnMapping columnMapping = shannonDBClient.toPrestoType(session, columnHandles.get(i).getShannonDBTypeHandle())
+            ColumnMapping columnMapping = shannonDBClient.toPrestoType(columnHandles.get(i).getShannonDBTypeHandle())
                     .orElseThrow(() -> new VerifyException("Unsupported column type"));
             Class<?> javaType = columnMapping.getType().getJavaType();
             ReadFunction readFunction = columnMapping.getReadFunction();

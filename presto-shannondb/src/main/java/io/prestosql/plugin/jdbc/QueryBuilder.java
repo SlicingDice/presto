@@ -130,7 +130,7 @@ public class QueryBuilder
             TypeAndValue typeAndValue = accumulator.get(i);
             int parameterIndex = i + 1;
             Type type = typeAndValue.getType();
-            WriteFunction writeFunction = client.toPrestoType(session, typeAndValue.getTypeHandle())
+            WriteFunction writeFunction = client.toPrestoType(typeAndValue.getTypeHandle())
                     .orElseThrow(() -> new VerifyException(format("Unsupported type %s with handle %s", type, typeAndValue.getTypeHandle())))
                     .getWriteFunction();
             Class<?> javaType = type.getJavaType();
@@ -160,7 +160,7 @@ public class QueryBuilder
 
     private static Domain pushDownDomain(ShannonDBClient client, ConnectorSession session, ShannonDBColumnHandle column, Domain domain)
     {
-        return client.toPrestoType(session, column.getShannonDBTypeHandle())
+        return client.toPrestoType(column.getShannonDBTypeHandle())
                 .orElseThrow(() -> new IllegalStateException(format("Unsupported type %s with handle %s", column.getColumnType(), column.getShannonDBTypeHandle())))
                 .getPushdownConverter().apply(domain);
     }
