@@ -40,9 +40,9 @@ public interface ShannonDBClient
 
     Optional<ShannonDBTableHandle> getTableHandle(ShannonDBIdentity identity, SchemaTableName schemaTableName);
 
-    List<ShannonDBColumnHandle> getColumns(ConnectorSession session, ShannonDBTableHandle tableHandle);
+    List<ShannonDBColumnHandle> getColumns(ShannonDBTableHandle tableHandle, ShannonDBIdentity identity);
 
-    Optional<ColumnMapping> toPrestoType(ConnectorSession session, ShannonDBTypeHandle typeHandle);
+    Optional<ColumnMapping> toPrestoType(ShannonDBTypeHandle typeHandle);
 
     WriteMapping toWriteMapping(ConnectorSession session, Type type);
 

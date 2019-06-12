@@ -198,11 +198,14 @@ public class BaseShannonDBClient
             try (ShannonDBResultSet resultSet = getTables(shannonDBSocketClient, Optional.of(remoteSchema), Optional.of(remoteTable))) {
                 List<ShannonDBTableHandle> tableHandles = new ArrayList<>();
                 while (resultSet.next()) {
-                    tableHandles.add(new ShannonDBTableHandle(
+                    ShannonDBTableHandle tableHandle = new ShannonDBTableHandle(
                             schemaTableName,
                             resultSet.getString("TABLE_CAT"),
                             resultSet.getString("TABLE_SCHEM"),
-                            resultSet.getString("TABLE_NAME"), null));
+                            resultSet.getString("TABLE_NAME"), null);
+
+                    tableHandle.setColumnHandles(getColumns(tableHandle, identity));
+                    tableHandles.add(tableHandle);
                 }
                 if (tableHandles.isEmpty()) {
                     return Optional.empty();
@@ -219,42 +222,48 @@ public class BaseShannonDBClient
     }
 
     @Override
-    public List<ShannonDBColumnHandle> getColumns(ConnectorSession session, ShannonDBTableHandle tableHandle)
+    public List<ShannonDBColumnHandle> getColumns(ShannonDBTableHandle tableHandle, ShannonDBIdentity identity)
     {
-        try (ShannonDBSocketClient shannonDBSocketClient = shannonDBSocketClientFactory.openSocket(ShannonDBIdentity.from(session))) {
-            try (ShannonDBResultSet resultSet = getColumns(tableHandle, shannonDBSocketClient)) {
-                List<ShannonDBColumnHandle> columns = new ArrayList<>();
-                while (resultSet.next()) {
-                    ShannonDBTypeHandle typeHandle = new ShannonDBTypeHandle(
-                            resultSet.getString("DATA_TYPE"),
-                            Optional.ofNullable(resultSet.getString("TYPE_NAME")),
-                            1024,
-                            resultSet.getInt("DECIMAL_DIGITS"),
-                            Optional.empty());
-                    Optional<ColumnMapping> columnMapping = toPrestoType(session, typeHandle);
-                    // skip unsupported column types
-                    if (columnMapping.isPresent()) {
-                        String columnName = resultSet.getString("COLUMN_NAME");
-                        boolean nullable = true;
-                        columns.add(new ShannonDBColumnHandle(columnName, typeHandle, columnMapping.get().getType(), nullable));
-                    }
-                }
-                if (columns.isEmpty()) {
-                    // In rare cases (e.g. PostgreSQL) a table might have no columns.
-                    throw new TableNotFoundException(tableHandle.getSchemaTableName());
-                }
-                return ImmutableList.copyOf(columns);
-            }
+        try (ShannonDBSocketClient shannonDBSocketClient = shannonDBSocketClientFactory.openSocket(identity)) {
+            return getShannonDBColumnHandles(tableHandle, shannonDBSocketClient);
         }
         catch (Exception e) {
             throw new PrestoException(JDBC_ERROR, e);
         }
     }
 
-    @Override
-    public Optional<ColumnMapping> toPrestoType(ConnectorSession session, ShannonDBTypeHandle typeHandle)
+    private List<ShannonDBColumnHandle> getShannonDBColumnHandles(ShannonDBTableHandle tableHandle, ShannonDBSocketClient shannonDBSocketClient)
+            throws Exception
     {
-        return jdbcTypeToPrestoType(session, typeHandle);
+        try (ShannonDBResultSet resultSet = getColumns(tableHandle, shannonDBSocketClient)) {
+            List<ShannonDBColumnHandle> columns = new ArrayList<>();
+            while (resultSet.next()) {
+                ShannonDBTypeHandle typeHandle = new ShannonDBTypeHandle(
+                        resultSet.getString("DATA_TYPE"),
+                        Optional.ofNullable(resultSet.getString("TYPE_NAME")),
+                        1024,
+                        resultSet.getInt("DECIMAL_DIGITS"),
+                        Optional.empty());
+                Optional<ColumnMapping> columnMapping = toPrestoType(typeHandle);
+                // skip unsupported column types
+                if (columnMapping.isPresent()) {
+                    String columnName = resultSet.getString("COLUMN_NAME");
+                    boolean nullable = true;
+                    columns.add(new ShannonDBColumnHandle(columnName, typeHandle, columnMapping.get().getType(), nullable));
+                }
+            }
+            if (columns.isEmpty()) {
+                // In rare cases (e.g. PostgreSQL) a table might have no columns.
+                throw new TableNotFoundException(tableHandle.getSchemaTableName());
+            }
+            return ImmutableList.copyOf(columns);
+        }
+    }
+
+    @Override
+    public Optional<ColumnMapping> toPrestoType(ShannonDBTypeHandle typeHandle)
+    {
+        return jdbcTypeToPrestoType(typeHandle);
     }
 
     @Override
@@ -510,11 +519,13 @@ public class BaseShannonDBClient
     @Override
     public void rollbackCreateTable(ShannonDBIdentity identity, ShannonDBOutputTableHandle handle)
     {
-        dropTable(identity, new ShannonDBTableHandle(
+        ShannonDBTableHandle tableHandle = new ShannonDBTableHandle(
                 new SchemaTableName(handle.getSchemaName(), handle.getTemporaryTableName()),
                 handle.getCatalogName(),
                 handle.getSchemaName(),
-                handle.getTemporaryTableName(), null));
+                handle.getTemporaryTableName(), null);
+        tableHandle.setColumnHandles(getColumns(tableHandle, identity));
+        dropTable(identity, tableHandle);
     }
 
     @Override
