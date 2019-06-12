@@ -64,7 +64,7 @@ public final class ShannonDBTableHandle
         this.tableName = requireNonNull(tableName, "tableName is null");
         this.constraint = requireNonNull(constraint, "constraint is null");
         this.limit = requireNonNull(limit, "limit is null");
-        this.columnHandles = ImmutableList.copyOf(requireNonNull(columnHandles, "columnHandles is null"));
+        this.columnHandles = ImmutableList.copyOf(columnHandles);
     }
 
     @JsonProperty

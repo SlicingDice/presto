@@ -113,7 +113,8 @@ public class BaseShannonDBClient
     protected final Cache<RemoteTableNameCacheKey, Map<String, String>> remoteTableNames;
 
     @Inject
-    public BaseShannonDBClient(BaseShannonDBConfig config, SocketFactory socketFactory){
+    public BaseShannonDBClient(BaseShannonDBConfig config, SocketFactory socketFactory)
+    {
         this(config, "\"", socketFactory);
     }
 
@@ -201,7 +202,7 @@ public class BaseShannonDBClient
                             schemaTableName,
                             resultSet.getString("TABLE_CAT"),
                             resultSet.getString("TABLE_SCHEM"),
-                            resultSet.getString("TABLE_NAME")));
+                            resultSet.getString("TABLE_NAME"), null));
                 }
                 if (tableHandles.isEmpty()) {
                     return Optional.empty();
@@ -513,7 +514,7 @@ public class BaseShannonDBClient
                 new SchemaTableName(handle.getSchemaName(), handle.getTemporaryTableName()),
                 handle.getCatalogName(),
                 handle.getSchemaName(),
-                handle.getTemporaryTableName()));
+                handle.getTemporaryTableName(), null));
     }
 
     @Override
