@@ -13,30 +13,45 @@
  */
 package io.prestosql.plugin.jdbc;
 
+import com.google.common.collect.ImmutableList;
+import io.prestosql.spi.NodeManager;
 import io.prestosql.spi.connector.ConnectorSession;
+import io.prestosql.spi.connector.ConnectorSplit;
 import io.prestosql.spi.connector.ConnectorSplitManager;
 import io.prestosql.spi.connector.ConnectorSplitSource;
 import io.prestosql.spi.connector.ConnectorTableHandle;
 import io.prestosql.spi.connector.ConnectorTransactionHandle;
+import io.prestosql.spi.connector.FixedSplitSource;
 
 import javax.inject.Inject;
 
+import java.util.List;
+import java.util.Optional;
+
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 
 public class ShannonDBSplitManager
         implements ConnectorSplitManager
 {
     private final ShannonDBClient shannonDBClient;
+    private final NodeManager nodeManager;
 
     @Inject
-    public ShannonDBSplitManager(ShannonDBClient shannonDBClient)
+    public ShannonDBSplitManager(ShannonDBClient shannonDBClient, NodeManager nodeManager)
     {
+
         this.shannonDBClient = requireNonNull(shannonDBClient, "client is null");
+        this.nodeManager = requireNonNull(nodeManager, "client is null");
     }
 
     @Override
     public ConnectorSplitSource getSplits(ConnectorTransactionHandle transaction, ConnectorSession session, ConnectorTableHandle table, SplitSchedulingStrategy splitSchedulingStrategy)
     {
-        return shannonDBClient.getSplits(ShannonDBIdentity.from(session), (ShannonDBTableHandle) table);
+        List<ConnectorSplit> splits = nodeManager.getAllNodes().stream()
+                .map(node -> new ShannonDBSplit(ImmutableList.of(node.getHostAndPort()), Optional.empty()))
+                .collect(toList());
+
+        return new FixedSplitSource(splits);
     }
 }

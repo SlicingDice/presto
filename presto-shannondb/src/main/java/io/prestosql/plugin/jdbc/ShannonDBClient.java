@@ -46,8 +46,6 @@ public interface ShannonDBClient
 
     WriteMapping toWriteMapping(ConnectorSession session, Type type);
 
-    ConnectorSplitSource getSplits(ShannonDBIdentity identity, ShannonDBTableHandle tableHandle);
-
     ShannonDBSocketClient getShannonDBSocketClient(ShannonDBIdentity identity, ShannonDBSplit split)
             throws Exception;
 

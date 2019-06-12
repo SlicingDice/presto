@@ -28,12 +28,15 @@ public class ShannonDBSplit
         implements ConnectorSplit
 {
     private final Optional<String> additionalPredicate;
+    private final List<HostAddress> addresses;
 
     @JsonCreator
     public ShannonDBSplit(
+            @JsonProperty("addresses") List<HostAddress> addresses, 
             @JsonProperty("additionalPredicate") Optional<String> additionalPredicate)
     {
         this.additionalPredicate = requireNonNull(additionalPredicate, "additionalPredicate is null");
+        this.addresses = requireNonNull(addresses, "addresses is null");
     }
 
     @JsonProperty
@@ -51,7 +54,7 @@ public class ShannonDBSplit
     @Override
     public List<HostAddress> getAddresses()
     {
-        return ImmutableList.of();
+        return addresses;
     }
 
     @Override
