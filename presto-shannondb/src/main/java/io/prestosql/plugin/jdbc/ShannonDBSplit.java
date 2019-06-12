@@ -36,7 +36,7 @@ public class ShannonDBSplit
             @JsonProperty("additionalPredicate") Optional<String> additionalPredicate)
     {
         this.additionalPredicate = requireNonNull(additionalPredicate, "additionalPredicate is null");
-        this.addresses = requireNonNull(addresses, "addresses is null");
+        this.addresses = ImmutableList.copyOf(requireNonNull(addresses, "addresses is null"));
     }
 
     @JsonProperty

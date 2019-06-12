@@ -16,6 +16,7 @@ package io.prestosql.plugin.jdbc;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import io.airlift.bootstrap.Bootstrap;
+import io.prestosql.spi.NodeManager;
 import io.prestosql.spi.classloader.ThreadContextClassLoader;
 import io.prestosql.spi.connector.Connector;
 import io.prestosql.spi.connector.ConnectorContext;
@@ -63,10 +64,12 @@ public class ShannonDBConnectorFactory
         requireNonNull(requiredConfig, "requiredConfig is null");
 
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = new Bootstrap(
-                    binder -> binder.bind(TypeManager.class).toInstance(context.getTypeManager()),
-                    new ShannonDBModule(),
-                    module);
+            Bootstrap app = new Bootstrap(new ShannonDBModule(),
+                    module,
+                    binder -> {
+                        binder.bind(TypeManager.class).toInstance(context.getTypeManager());
+                        binder.bind(NodeManager.class).toInstance(context.getNodeManager());
+                    });
 
             Injector injector = app
                     .strictConfig()
