@@ -99,7 +99,7 @@ public class ShannonDBMetadata
                 handle.getSchemaName(),
                 handle.getTableName(),
                 newDomain,
-                handle.getLimit());
+                handle.getLimit(), handle.getColumnHandles());
 
         return Optional.of(new ConstraintApplicationResult<>(handle, constraint.getSummary()));
     }
@@ -123,7 +123,7 @@ public class ShannonDBMetadata
                 handle.getSchemaName(),
                 handle.getTableName(),
                 handle.getConstraint(),
-                OptionalLong.of(limit));
+                OptionalLong.of(limit), handle.getColumnHandles());
 
         return Optional.of(new LimitApplicationResult<>(handle, shannonDBClient.isLimitGuaranteed()));
     }
