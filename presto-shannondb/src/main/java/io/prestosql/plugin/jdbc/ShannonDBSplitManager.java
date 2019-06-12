@@ -61,17 +61,7 @@ public class ShannonDBSplitManager
         ShannonDBTableHandle tableHandle = (ShannonDBTableHandle) table;
         TupleDomain<ColumnHandle> predicate = ((ShannonDBTableHandle) table).getConstraint();
 
-        //TODO is there a better way to get the node column?
-        Optional<ShannonDBColumnHandle> nodeColumnHandle = tableHandle.getColumnHandles().stream()
-                .filter(shannonDBColumnHandle -> shannonDBColumnHandle.getColumnName().equals(NODE_COLUMN_NAME))
-                .findFirst();
-        checkState(nodeColumnHandle.isPresent(), "Failed to find %s column", NODE_COLUMN_NAME);
-
         List<ConnectorSplit> splits = nodeManager.getAllNodes().stream()
-                .filter(node -> {
-                    NullableValue value = NullableValue.of(createUnboundedVarcharType(), utf8Slice(node.getNodeIdentifier()));
-                    return predicate.overlaps(fromFixedValues(ImmutableMap.of(nodeColumnHandle.get(), value)));
-                })
                 .map(node -> new ShannonDBSplit(ImmutableList.of(node.getHostAndPort()), Optional.empty()))
                 .collect(toList());
         
