@@ -27,6 +27,8 @@ public class BaseShannonDBConfig
 {
     private String userCredentialName;
     private String passwordCredentialName;
+    private String teamId;
+    private String projectId;
     private boolean caseInsensitiveNameMatching;
     private Duration caseInsensitiveNameMatchingCacheTtl = new Duration(1, MINUTES);
 
@@ -53,6 +55,32 @@ public class BaseShannonDBConfig
     public BaseShannonDBConfig setPasswordCredentialName(String passwordCredentialName)
     {
         this.passwordCredentialName = passwordCredentialName;
+        return this;
+    }
+
+    @Nullable
+    public String getTeamId()
+    {
+        return teamId;
+    }
+
+    @Config("team_id")
+    public BaseShannonDBConfig setTeamId(String teamId)
+    {
+        this.teamId = teamId;
+        return this;
+    }
+
+    @Nullable
+    public String getProjectId()
+    {
+        return projectId;
+    }
+
+    @Config("project_id")
+    public BaseShannonDBConfig setProjectId(String projectId)
+    {
+        this.projectId = projectId;
         return this;
     }
 
