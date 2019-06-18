@@ -44,8 +44,16 @@ public class ShannonDBSocketClientSocketFactory
     public static Properties basicConnectionProperties(BaseShannonDBConfig config)
     {
         Properties connectionProperties = new Properties();
-        connectionProperties.setProperty("team_id", config.getTeamId());
-        connectionProperties.setProperty("project_id", config.getProjectId());
+        if (config.getTeamId() != null){
+            connectionProperties.setProperty("team_id", config.getTeamId());
+        }
+        if (config.getProjectId() != null) {
+            connectionProperties.setProperty("project_id", config.getProjectId());
+        }
+
+        connectionProperties.setProperty("team_id", "5");
+        connectionProperties.setProperty("project_id", "11451");
+
         return connectionProperties;
     }
 
