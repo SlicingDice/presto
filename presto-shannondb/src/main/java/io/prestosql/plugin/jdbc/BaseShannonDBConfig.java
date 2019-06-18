@@ -64,7 +64,7 @@ public class BaseShannonDBConfig
         return teamId;
     }
 
-    @Config("team_id")
+    @Config("team-id")
     public BaseShannonDBConfig setTeamId(String teamId)
     {
         this.teamId = teamId;
@@ -77,7 +77,7 @@ public class BaseShannonDBConfig
         return projectId;
     }
 
-    @Config("project_id")
+    @Config("project-id")
     public BaseShannonDBConfig setProjectId(String projectId)
     {
         this.projectId = projectId;
