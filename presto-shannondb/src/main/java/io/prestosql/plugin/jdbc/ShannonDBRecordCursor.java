@@ -118,7 +118,7 @@ public class ShannonDBRecordCursor
     @Override
     public boolean advanceNextPosition()
     {
-        if (closed) {
+        if (closed || resultSet == null) {
             return false;
         }
 
