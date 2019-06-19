@@ -66,7 +66,7 @@ public class ShannonDBMysqlReader
     {
         List<Map<Object, Object>> list = new ArrayList<>();
 
-        String sql = "SELECT DISTINCT CONCAT(p.team_id, '_', pf.project_id, '_', pf.dimension) as table_name  FROM slicing_dice.ProjectField pf JOIN Project p ON p.id = pf.project_id where p.team_id = ? and pf.project_id = ?";
+        String sql = "SELECT DISTINCT CONCAT(p.team_id, '_', pf.project_id, '_', pf.dimension) as table_name  FROM ProjectField pf JOIN Project p ON p.id = pf.project_id where p.team_id = ? and pf.project_id = ?";
 
         String dimension = null;
         if (table != null) {
@@ -101,7 +101,7 @@ public class ShannonDBMysqlReader
     {
         List<Map<Object, Object>> list = new ArrayList<>();
 
-        final String sql = "SELECT CASE WHEN new_format THEN CONCAT(project_id, '_', dimension, '_', api_name, '_', pf.id) ELSE CONCAT(project_id, '_', dimension, '_', api_name) END as column_name, s1search_type as column_type, CONCAT(team_id, '_', project_id) as group_name, CONCAT(team_id, '_', project_id, '_', dimension) as table_name  FROM slicing_dice.ProjectField pf JOIN Project p ON p.id = pf.project_id where team_id = ? and project_id = ? and table_name = ?";
+        final String sql = "SELECT CASE WHEN new_format THEN CONCAT(project_id, '_', dimension, '_', api_name, '_', pf.id) ELSE CONCAT(project_id, '_', dimension, '_', api_name) END as column_name, s1search_type as column_type, CONCAT(team_id, '_', project_id) as group_name, CONCAT(team_id, '_', project_id, '_', dimension) as table_name  FROM ProjectField pf JOIN Project p ON p.id = pf.project_id where team_id = ? and project_id = ? and table_name = ?";
         try (final Connection conn = DriverManager.getConnection(URL, USER, PASS);
                 final PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, connectionProperties.getProperty("team_id"));
@@ -127,7 +127,7 @@ public class ShannonDBMysqlReader
     {
         List<Map<Object, Object>> list = new ArrayList<>();
 
-        final String sql = "SELECT CASE WHEN new_format AND pf.api_name != 'entity-id' THEN CONCAT(pf.api_name, '_', pf.id) ELSE CONCAT(pf.api_name) END as column_name, pf.s1search_type as column_type, CONCAT(p.team_id, '_', pf.project_id) as group_name, CONCAT(p.team_id, '_', pf.project_id, '_', pf.dimension) as table_name, pf.decimal_places FROM slicing_dice.ProjectField pf JOIN Project p ON p.id = pf.project_id where p.team_id = ? and pf.project_id = ?  and pf.dimension = ?";
+        final String sql = "SELECT CASE WHEN new_format AND pf.api_name != 'entity-id' THEN CONCAT(pf.api_name, '_', pf.id) ELSE CONCAT(pf.api_name) END as column_name, pf.s1search_type as column_type, CONCAT(p.team_id, '_', pf.project_id) as group_name, CONCAT(p.team_id, '_', pf.project_id, '_', pf.dimension) as table_name, pf.decimal_places FROM ProjectField pf JOIN Project p ON p.id = pf.project_id where p.team_id = ? and pf.project_id = ?  and pf.dimension = ?";
 
         final String[] tableSplit = table.split("_");
         final String dimension = tableSplit[tableSplit.length - 1];
