@@ -33,11 +33,11 @@ public class DynamicCatalogHolder
 
     public static Optional<CatalogModel> getCatalogByCatalogName(String catalogName)
     {
-        return loadedCatalogs.stream().filter(c -> c.getCatalogName().equals(catalogName)).findAny();
+        return loadedCatalogs.stream().filter(c -> c.getName().equals(catalogName)).findAny();
     }
 
     public static List<CatalogModel> getCatalogsByTeamId(String teamId)
     {
-        return loadedCatalogs.stream().filter(c -> c.getOwner().equals(teamId)).collect(Collectors.toList());
+        return loadedCatalogs.stream().filter(c -> c.getTeamId().equals(teamId)).collect(Collectors.toList());
     }
 }

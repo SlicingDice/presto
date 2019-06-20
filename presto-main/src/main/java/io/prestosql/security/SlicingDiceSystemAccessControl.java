@@ -77,7 +77,7 @@ public class SlicingDiceSystemAccessControl
     public void checkCanAccessCatalog(Identity identity, String catalogName)
     {
         Optional<CatalogModel> catalog = DynamicCatalogHolder.getCatalogByCatalogName(catalogName);
-        if (!catalog.isPresent() || !catalog.get().getOwner().equals(identity.getUser())) {
+        if (!catalog.isPresent() || !catalog.get().getTeamId().equals(identity.getUser())) {
             denyCatalogAccess(catalogName);
         }
     }
@@ -91,7 +91,7 @@ public class SlicingDiceSystemAccessControl
     public void checkCanSetCatalogSessionProperty(Identity identity, String catalogName, String propertyName)
     {
         Optional<CatalogModel> catalog = DynamicCatalogHolder.getCatalogByCatalogName(catalogName);
-        if (!catalog.isPresent() || !catalog.get().getOwner().equals(identity.getUser())) {
+        if (!catalog.isPresent() || !catalog.get().getTeamId().equals(identity.getUser())) {
             denySetCatalogSessionProperty(catalogName);
         }
     }
@@ -110,7 +110,7 @@ public class SlicingDiceSystemAccessControl
             denyUserAccess(identity.getUser());
         }
 
-        Set<String> setCatalogs = listCatalogs.stream().map(CatalogModel::getCatalogName).collect(Collectors.toSet());
+        Set<String> setCatalogs = listCatalogs.stream().map(CatalogModel::getName).collect(Collectors.toSet());
         setCatalogs.add("system");
         return setCatalogs;
     }
@@ -142,7 +142,7 @@ public class SlicingDiceSystemAccessControl
     public void checkCanShowSchemas(Identity identity, String catalogName)
     {
         Optional<CatalogModel> catalog = DynamicCatalogHolder.getCatalogByCatalogName(catalogName);
-        if (!catalog.isPresent() || !catalog.get().getOwner().equals(identity.getUser())) {
+        if (!catalog.isPresent() || !catalog.get().getTeamId().equals(identity.getUser())) {
             denyShowSchemas(catalogName);
         }
     }
@@ -156,7 +156,7 @@ public class SlicingDiceSystemAccessControl
     public void checkCanShowRoles(Identity identity, String catalogName)
     {
         Optional<CatalogModel> catalog = DynamicCatalogHolder.getCatalogByCatalogName(catalogName);
-        if (!catalog.isPresent() || !catalog.get().getOwner().equals(identity.getUser())) {
+        if (!catalog.isPresent() || !catalog.get().getTeamId().equals(identity.getUser())) {
             denyShowRoles(catalogName);
         }
     }

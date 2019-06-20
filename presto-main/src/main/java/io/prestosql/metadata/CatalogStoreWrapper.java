@@ -20,6 +20,7 @@ import java.io.File;
 public class CatalogStoreWrapper implements CatalogStore
 {
     private static final File MYSQL_CONFIGURATION = new File("etc/mysql.properties");
+    private static final File CONNECTIONS_CONFIGURATION = new File("etc/connections_url.properties");
     private CatalogStore INSTANCE;
 
     @Inject
@@ -27,6 +28,7 @@ public class CatalogStoreWrapper implements CatalogStore
     {
         if (MYSQL_CONFIGURATION.exists()) {
             mysqlCatalogStore.loadProperties(MYSQL_CONFIGURATION);
+            mysqlCatalogStore.loadConnectionsURL(CONNECTIONS_CONFIGURATION);
             this.INSTANCE = mysqlCatalogStore;
         }
         else{

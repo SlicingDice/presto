@@ -20,6 +20,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MysqlCatalogReader
 {
@@ -41,20 +43,53 @@ public class MysqlCatalogReader
 
     public List<CatalogModel> loadCatalogs()
     {
-        final List<CatalogModel> catalogs = new ArrayList<>();
+        final Map<String, CatalogModel> catalogs = new ConcurrentHashMap<>();
         try (final Connection conn = DriverManager.getConnection(URL, USER, PASS);
                 final Statement stmt = conn.createStatement()) {
-            final String sql = "select * from catalog";
+            final String sql = "SELECT ds.id, driver_class_path, source_type, dsc.name, dsc.value," +
+                    " ds.team_id, (SELECT value FROM DataSourceConfig dsci WHERE dsci.name = 'projects' AND dsci.id_data_source = ds.id) AS projects " +
+                    "FROM DataSource ds " +
+                    "JOIN DataSourceConfig dsc ON ds.id = dsc.id_data_source " +
+                    "WHERE source_usage IN (2, 3) AND NOT deleted AND NOT dsc.ignore;";
             final ResultSet rs = stmt.executeQuery(sql);
+
             while (rs.next()) {
-                CatalogModel catalog = new CatalogModel(rs.getInt("id"), rs.getString("connector_name"), rs.getString("catalog_name"), rs.getString("url"), rs.getString("user"), rs.getString("password"), rs.getString("owner"));
-                catalogs.add(catalog);
+                final String driverClassPath = rs.getString("driver_class_path");
+                final String sourceType = rs.getString("source_type");
+                final String name = rs.getString("name");
+                final String value = rs.getString("value");
+                final int teamId = rs.getInt("team_id");
+                String projects = rs.getString("projects");
+
+                if (projects != null) {
+                    projects = projects.replace("[", "").replace("]", "");
+                    if (projects.length() > 0) {
+                        for (final String s : projects.split(",")) {
+                            final String catalogName = String.format("%s_%s", teamId, s.trim());
+
+                            final CatalogModel catalogModel = catalogs.computeIfAbsent(catalogName,
+                                    k -> new CatalogModel(catalogName, driverClassPath, sourceType, teamId));
+
+                            catalogModel.addProperty(name, value);
+                        }
+                    } else {
+                        final CatalogModel catalogModel = catalogs.computeIfAbsent(String.valueOf(teamId),
+                                k -> new CatalogModel(String.valueOf(teamId), driverClassPath, sourceType, teamId));
+
+                        catalogModel.addProperty(name, value);
+                    }
+                } else {
+                    final CatalogModel catalogModel = catalogs.computeIfAbsent(String.valueOf(teamId),
+                            k -> new CatalogModel(String.valueOf(teamId), driverClassPath, sourceType, teamId));
+
+                    catalogModel.addProperty(name, value);
+                }
             }
         }
         catch (SQLException ex) {
             ex.printStackTrace();
         }
-        return catalogs;
+        return new ArrayList<>(catalogs.values());
     }
 
 

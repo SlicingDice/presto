@@ -46,6 +46,8 @@ public class MysqlCatalogStore implements CatalogStore
     private final AtomicBoolean catalogsLoaded = new AtomicBoolean();
     private MysqlCatalogReader mysqlCatalogReader;
 
+    private Map<String, String> connectionsUrl;
+
     @Inject
     public MysqlCatalogStore(ConnectorManager connectorManager, StaticCatalogStoreConfig config)
     {
@@ -106,7 +108,7 @@ public class MysqlCatalogStore implements CatalogStore
     private void dropCatalogs(List<CatalogModel> catalogs)
     {
         for (final CatalogModel catalog : catalogs) {
-            connectorManager.dropConnection(catalog.getCatalogName());
+            connectorManager.dropConnection(catalog.getName());
         }
         DynamicCatalogHolder.getLoadedCatalogs().removeAll(catalogs);
     }
@@ -138,7 +140,7 @@ public class MysqlCatalogStore implements CatalogStore
     private void loadCatalog(CatalogModel model)
             throws Exception
     {
-        String catalogName = model.getCatalogName();
+        String catalogName = model.getName();
         if (disabledCatalogs.contains(catalogName)) {
             log.info("Skipping disabled catalog %s", catalogName);
             return;
@@ -146,16 +148,61 @@ public class MysqlCatalogStore implements CatalogStore
 
         log.info("-- Loading catalog %s --", model);
 
-        String connectorName = model.getConnectorName();
+        String connectorName = model.getSourceType();
         checkState(connectorName != null, "Catalog configuration %s does not contain connector.name", model);
 
         Map<String, String> properties = new HashMap<>();
-        properties.put("connection-url", model.getUrl());
-        properties.put("connection-user", model.getUser());
-        properties.put("connection-password", model.getPassword());
+        properties.put("connection-url", mountUrl(model));
 
         connectorManager.createConnection(catalogName, connectorName, ImmutableMap.copyOf(properties));
         log.info("-- Added catalog %s using connector %s --", catalogName, connectorName);
+    }
+
+    private String mountUrl(final CatalogModel model) {
+        final String driverClassPath = model.getDriverClassPath();
+        String connectionURL = connectionsUrl.get(driverClassPath);
+        final StringBuilder additionalParams = new StringBuilder();
+
+        final List<CatalogModel.Parameters> parametersList = model.getParametersList();
+        for (int i = 0; i < parametersList.size(); i++) {
+            final CatalogModel.Parameters parameters = parametersList.get(i);
+
+            final String name = parameters.getConfigName();
+
+            if (name.equals("database")) {
+                continue;
+            }
+
+            final String value = parameters.getValue();
+
+            final String formattedName = String.format("${%s}", name);
+
+            if (connectionURL.contains(formattedName)) {
+                connectionURL = connectionURL.replace(formattedName, value);
+            } else {
+                additionalParams.append(name).append("=").append(value);
+                if (i != parametersList.size() - 1) {
+                    additionalParams.append(";");
+                }
+            }
+        }
+
+        if (additionalParams.length() > 0) {
+            final char lastChar = connectionURL.charAt(connectionURL.length() - 1);
+            final String suffix;
+            if (lastChar != ':' && lastChar != ';') {
+                if (connectionURL.contains(";")) {
+                    suffix = ";";
+                } else {
+                    suffix = ":";
+                }
+            } else {
+                suffix = "";
+            }
+            connectionURL += suffix + additionalParams.toString();
+        }
+
+        return connectionURL;
     }
 
     public void loadProperties(File mysqlConfiguration)
@@ -168,6 +215,15 @@ public class MysqlCatalogStore implements CatalogStore
             mysqlCatalogReader.setProperties(url, user, password);
         }
         catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void loadConnectionsURL(File connectionsConfiguration)
+    {
+        try {
+            this.connectionsUrl = PropertiesUtil.loadProperties(connectionsConfiguration);
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

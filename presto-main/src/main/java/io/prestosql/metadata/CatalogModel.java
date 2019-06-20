@@ -13,101 +13,87 @@
  */
 package io.prestosql.metadata;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
 public class CatalogModel
 {
-    private int id;
-    private String catalogName;
-    private String connectorName;
-    private String url;
-    private String user;
-    private String password;
-    private String owner;
+    private final String name;
+    private final String driverClassPath;
+    private final String sourceType;
+    private final List<Parameters> parametersList = new ArrayList<>();
+    private final int teamId;
 
-    public CatalogModel(int id, String connectorName, String catalogName, String url, String user, String password, String owner)
-    {
-        this.id = id;
-        this.connectorName = connectorName;
-        this.catalogName = catalogName;
-        this.url = url;
-        this.user = user;
-        this.password = password;
-        this.owner = owner;
+    public CatalogModel(final String name, final String driverClassPath, final String sourceType,
+                        final int teamId) {
+        this.name = name;
+        this.driverClassPath = driverClassPath;
+        this.sourceType = sourceType;
+        this.teamId = teamId;
     }
 
-    public int getId()
-    {
-        return id;
+    public String getName() {
+        return name;
     }
 
-    public String getConnectorName()
-    {
-        return connectorName;
+    public String getDriverClassPath() {
+        return driverClassPath;
     }
 
-    public String getCatalogName()
-    {
-        return catalogName;
+    public String getSourceType() {
+        return sourceType;
     }
 
-    public String getPassword()
-    {
-        return password;
+    public List<Parameters> getParametersList() {
+        return parametersList;
     }
 
-    public String getUrl()
-    {
-        return url;
+    public String getTeamId() {
+        return String.valueOf(teamId);
     }
 
-    public String getUser()
-    {
-        return user;
-    }
-
-    public String getOwner()
-    {
-        return owner;
+    public void addProperty(final String name, final String value) {
+        this.parametersList.add(new Parameters(name, value));
     }
 
     @Override
-    public boolean equals(Object o)
-    {
+    public boolean equals(final Object o) {
         if (this == o) {
             return true;
         }
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
-        CatalogModel that = (CatalogModel) o;
-
-        if (id != that.id) {
-            return false;
-        }
-        if (catalogName != null ? !catalogName.equals(that.catalogName) : that.catalogName != null) {
-            return false;
-        }
-        if (connectorName != null ? !connectorName.equals(that.connectorName) : that.connectorName != null) {
-            return false;
-        }
-        if (url != null ? !url.equals(that.url) : that.url != null) {
-            return false;
-        }
-        if (user != null ? !user.equals(that.user) : that.user != null) {
-            return false;
-        }
-        return password != null ? password.equals(that.password) : that.password == null;
+        final CatalogModel that = (CatalogModel) o;
+        return Objects.equals(name, that.name) &&
+                teamId == that.teamId &&
+                Objects.equals(driverClassPath, that.driverClassPath) &&
+                Objects.equals(sourceType, that.sourceType);
     }
 
     @Override
-    public int hashCode()
-    {
-        int result = id;
-        result = 31 * result + (catalogName != null ? catalogName.hashCode() : 0);
-        result = 31 * result + (connectorName != null ? connectorName.hashCode() : 0);
-        result = 31 * result + (url != null ? url.hashCode() : 0);
-        result = 31 * result + (user != null ? user.hashCode() : 0);
-        result = 31 * result + (password != null ? password.hashCode() : 0);
-        return result;
+    public int hashCode() {
+        return Objects.hash(name, driverClassPath, sourceType, parametersList, teamId);
+    }
+
+    public static class Parameters {
+
+        private final String configName;
+
+        private final String value;
+
+        public Parameters(final String configName, final String value) {
+            this.configName = configName;
+            this.value = value;
+        }
+
+        public String getConfigName() {
+            return configName;
+        }
+
+        public String getValue() {
+            return value;
+        }
     }
 }
