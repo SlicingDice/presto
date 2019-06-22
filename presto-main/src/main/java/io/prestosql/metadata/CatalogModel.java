@@ -42,6 +42,9 @@ public class CatalogModel
     }
 
     public String getSourceType() {
+        if (sourceType.contains("csv")) {
+            return "csv";
+        }
         return sourceType;
     }
 
