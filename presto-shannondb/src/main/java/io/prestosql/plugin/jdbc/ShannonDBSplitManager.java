@@ -53,7 +53,7 @@ public class ShannonDBSplitManager
 
         this.shannonDBClient = requireNonNull(shannonDBClient, "client is null");
         this.nodeManager = requireNonNull(nodeManager, "client is null");
-    }
+    }n
 
     @Override
     public ConnectorSplitSource getSplits(ConnectorTransactionHandle transaction, ConnectorSession session, ConnectorTableHandle table, SplitSchedulingStrategy splitSchedulingStrategy)
