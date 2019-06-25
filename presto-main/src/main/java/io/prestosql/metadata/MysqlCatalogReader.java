@@ -50,7 +50,7 @@ public class MysqlCatalogReader
                     " ds.team_id, (SELECT value FROM DataSourceConfig dsci WHERE dsci.name = 'projects' AND dsci.id_data_source = ds.id) AS projects " +
                     "FROM DataSource ds " +
                     "JOIN DataSourceConfig dsc ON ds.id = dsc.id_data_source " +
-                    "WHERE source_usage IN (2, 3) AND NOT deleted AND NOT dsc.ignore;";
+                    "WHERE source_usage IN (2, 3) AND NOT deleted AND NOT dsc.ignore AND source_type is not null AND source_type != '';";
             final ResultSet rs = stmt.executeQuery(sql);
 
             while (rs.next()) {
