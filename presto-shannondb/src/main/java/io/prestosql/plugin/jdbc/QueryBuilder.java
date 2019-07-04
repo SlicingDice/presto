@@ -125,6 +125,7 @@ public class QueryBuilder
 
         String query = sqlFunction.apply(sql.toString());
         ShannonDBPreparedStatement statement = client.getShannonDBPreparedStatement(socketClient, query);
+        statement.setColumns(columns);
 
         for (int i = 0; i < accumulator.size(); i++) {
             TypeAndValue typeAndValue = accumulator.get(i);

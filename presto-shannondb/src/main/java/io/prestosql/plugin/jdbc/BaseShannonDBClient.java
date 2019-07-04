@@ -681,7 +681,7 @@ public class BaseShannonDBClient
             throws Exception
     {
         log.debug("Execute: %s", query);
-        shannonDBSocketClient.execute(query);
+        shannonDBSocketClient.execute(query, null);
     }
 
     @Override

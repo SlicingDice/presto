@@ -58,13 +58,10 @@ public class ShannonDBSplitManager
     @Override
     public ConnectorSplitSource getSplits(ConnectorTransactionHandle transaction, ConnectorSession session, ConnectorTableHandle table, SplitSchedulingStrategy splitSchedulingStrategy)
     {
-        ShannonDBTableHandle tableHandle = (ShannonDBTableHandle) table;
-        TupleDomain<ColumnHandle> predicate = ((ShannonDBTableHandle) table).getConstraint();
-
         List<ConnectorSplit> splits = nodeManager.getAllNodes().stream()
                 .map(node -> new ShannonDBSplit(ImmutableList.of(node.getHostAndPort()), Optional.empty()))
                 .collect(toList());
-        
+
         return new FixedSplitSource(splits);
     }
 }

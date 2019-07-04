@@ -20,6 +20,7 @@ import java.sql.Timestamp;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ShannonDBPreparedStatement
@@ -28,6 +29,7 @@ public class ShannonDBPreparedStatement
     private StringBuilder query;
     private HashMap<Integer, Object> params;
     private ShannonDBSocketClient shannonDBSocketClient;
+    private List<ShannonDBColumnHandle> columns;
 
     public ShannonDBPreparedStatement(ShannonDBSocketClient shannonDBSocketClient)
     {
@@ -84,7 +86,7 @@ public class ShannonDBPreparedStatement
 
     public ShannonDBResultSet executeQuery()
     {
-        return shannonDBSocketClient.execute(prepareQuery());
+        return shannonDBSocketClient.execute(prepareQuery(), columns);
     }
 
     public static void setBoolean(ShannonDBPreparedStatement shannonDBPreparedStatement, int index, boolean value)
@@ -191,5 +193,10 @@ public class ShannonDBPreparedStatement
     public static double getDouble(ShannonDBResultSet shannonDBResultSet, int index)
     {
         return shannonDBResultSet.getDouble(index);
+    }
+
+    public void setColumns(List<ShannonDBColumnHandle> columns)
+    {
+        this.columns = columns;
     }
 }

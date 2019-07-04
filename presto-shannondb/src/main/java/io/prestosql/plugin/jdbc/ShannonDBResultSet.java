@@ -26,10 +26,18 @@ import java.util.Map;
 public class ShannonDBResultSet implements AutoCloseable
 {
     private final List<Map<Object, Object>> list;
+    private final List<ShannonDBColumnHandle> columns;
     private int index = -1;
 
     public ShannonDBResultSet(final List<Map<Object, Object>> list){
         this.list = list;
+        this.columns = null;
+    }
+
+    public ShannonDBResultSet(final List<Map<Object, Object>> list, final List<ShannonDBColumnHandle> columns)
+    {
+        this.list = list;
+        this.columns = columns;
     }
 
     @Override
@@ -60,6 +68,14 @@ public class ShannonDBResultSet implements AutoCloseable
         return lastValue == null;
     }
 
+    public Object getColumnName(int columnIndex){
+        if (columns != null && !columns.isEmpty()){
+            return columns.get(columnIndex -1).getColumnName();
+        }
+
+        return null;
+    }
+
     public String getString(String key)
     {
         return (String) list.get(index).get(key);
@@ -72,71 +88,91 @@ public class ShannonDBResultSet implements AutoCloseable
 
     public String getString(int columnIndex)
     {
-        return (String) list.get(index).get(columnIndex);
+        return (String) list.get(index).get(getColumnName(columnIndex));
     }
 
     public boolean getBoolean(int columnIndex)
     {
-        return (boolean) list.get(index).get(columnIndex);
+        return (boolean) list.get(index).get(getColumnName(columnIndex));
     }
 
     public float getFloat(int columnIndex)
     {
-        return (float) list.get(index).get(columnIndex);
+        return (float) list.get(index).get(getColumnName(columnIndex));
     }
 
     public BigDecimal getBigDecimal(int columnIndex)
     {
-        return (BigDecimal) list.get(index).get(columnIndex);
+        return (BigDecimal) list.get(index).get(getColumnName(columnIndex));
     }
 
     public byte getBytes(int columnIndex)
     {
-        return (byte) list.get(index).get(columnIndex);
+        return (byte) list.get(index).get(getColumnName(columnIndex));
     }
 
     public Date getDate(int columnIndex)
     {
-        return (Date) list.get(index).get(columnIndex);
+        return (Date) list.get(index).get(getColumnName(columnIndex));
     }
 
     public Time getTime(int columnIndex)
     {
-        return (Time) list.get(index).get(columnIndex);
+        return (Time) list.get(index).get(getColumnName(columnIndex));
     }
 
     public Timestamp getTimestamp(int columnIndex)
     {
-        return (Timestamp) list.get(index).get(columnIndex);
+        return (Timestamp) list.get(index).get(getColumnName(columnIndex));
     }
 
     public LocalDateTime getObject(int columnIndex, Class<LocalDateTime> localDateTimeClass)
     {
-        return (LocalDateTime) list.get(index).get(columnIndex);
+        return (LocalDateTime) list.get(index).get(getColumnName(columnIndex));
     }
 
     public long getByte(int columnIndex)
     {
-        return (long) list.get(index).get(columnIndex);
+        return (long) list.get(index).get(getColumnName(columnIndex));
     }
 
     public long getShort(int columnIndex)
     {
-        return (long) list.get(index).get(columnIndex);
+        return (long) list.get(index).get(getColumnName(columnIndex));
     }
 
     public long getInt(int columnIndex)
     {
-        return Long.parseLong(list.get(index).get(String.valueOf(columnIndex)).toString());
+        return Long.parseLong(list.get(index).get(getColumnName(columnIndex)).toString());
     }
 
     public long getLong(int columnIndex)
     {
-        return (long) list.get(index).get(columnIndex);
+        return (long) list.get(index).get(getColumnName(columnIndex));
     }
 
     public double getDouble(int columnIndex)
     {
-        return (float) list.get(index).get(columnIndex);
+        return (float) list.get(index).get(getColumnName(columnIndex));
+    }
+
+    public BigDecimal getBigDecimal(String columnName)
+    {
+        return (BigDecimal) list.get(index).get(columnName);
+    }
+
+    public boolean getBoolean(String columnName)
+    {
+        return (boolean) list.get(index).get(columnName);
+    }
+
+    public Date getDate(String columnName)
+    {
+        return (Date) list.get(index).get(columnName);
+    }
+
+    public Timestamp getTimestamp(String columnName)
+    {
+        return (Timestamp) list.get(index).get(columnName);
     }
 }

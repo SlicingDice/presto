@@ -85,7 +85,7 @@ public class MysqlCatalogReader
                     catalogModel.addProperty(name, value);
                 }
             }
-            CatalogModel catalog = new CatalogModel("1234", "shannondb", "shannondb", 1);
+            CatalogModel catalog = new CatalogModel("catalogc", "shannondb", "shannondb", 1);
             catalogs.put("shannondb", catalog);
         }
         catch (SQLException ex) {

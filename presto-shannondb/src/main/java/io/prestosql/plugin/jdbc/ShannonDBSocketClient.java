@@ -20,7 +20,6 @@ import javax.inject.Inject;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
 import java.net.Socket;
 import java.nio.charset.Charset;
 import java.util.List;
@@ -43,14 +42,7 @@ public class ShannonDBSocketClient
     {
         this.connectionProperties = connectionProperties;
         this.mysqlReader = new ShannonDBMysqlReader();
-        if (socket == null || socket.isClosed()) {
-            try {
-                socket = new Socket("127.0.0.1", 1234);
-            }
-            catch (java.io.IOException e) {
-                e.printStackTrace();
-            }
-        }
+
         return this;
     }
 
@@ -58,13 +50,22 @@ public class ShannonDBSocketClient
     public void close()
             throws Exception
     {
-        socket.close();
+        if (socket != null && !socket.isClosed()) {
+            socket.close();
+        }
     }
 
-    public ShannonDBResultSet send(SocketRequest request)
+    public ShannonDBResultSet send(SocketRequest request, List<ShannonDBColumnHandle> columns)
     {
         try {
+            try {
+                if (socket == null || socket.isClosed()) {
+                    socket = new Socket("127.0.0.1", 1234);
+                }
+            }
+            catch (Exception e){
 
+            }
             DataOutputStream outputStream = new DataOutputStream(socket.getOutputStream());
             DataInputStream inputStream = new DataInputStream(socket.getInputStream());
 
@@ -96,10 +97,18 @@ public class ShannonDBSocketClient
 
             final List<Map<Object, Object>> result = (List<Map<Object, Object>>) list.get("result");
 
-            return new ShannonDBResultSet(result);
+            return new ShannonDBResultSet(result, columns);
         }
-        catch (IOException e) {
+        catch (Exception e) {
             e.printStackTrace();
+        }
+        finally {
+            try {
+                close();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         return null;
     }
@@ -129,12 +138,12 @@ public class ShannonDBSocketClient
         return mysqlReader.getTables(catalog, schema, table, connectionProperties);
     }
 
-    public ShannonDBResultSet execute(String query)
+    public ShannonDBResultSet execute(String query, List<ShannonDBColumnHandle> columns)
     {
         SocketRequest request = new SocketRequest();
         request.setProject_id("" + connectionProperties.getProperty("project_id"));
         request.setSql(query);
-        return send(request);
+        return send(request, columns);
     }
 
     public ShannonDBResultSet getColumns(String catalogName, String schema, String table, Object o)
