@@ -59,13 +59,14 @@ public class MysqlCatalogReader
                 final String name = rs.getString("name");
                 final String value = rs.getString("value");
                 final int teamId = rs.getInt("team_id");
+                final int dataSourceId = rs.getInt("id");
                 String projects = rs.getString("projects");
 
                 if (projects != null) {
                     projects = projects.replace("[", "").replace("]", "");
                     if (projects.length() > 0) {
                         for (final String s : projects.split(",")) {
-                            final String catalogName = String.format("%s_%s", teamId, s.trim());
+                            final String catalogName = String.format("%s_%s_%s", teamId, s.trim(), dataSourceId);
 
                             final CatalogModel catalogModel = catalogs.computeIfAbsent(catalogName,
                                     k -> new CatalogModel(catalogName, driverClassPath, sourceType, teamId));
@@ -73,14 +74,16 @@ public class MysqlCatalogReader
                             catalogModel.addProperty(name, value);
                         }
                     } else {
+                        final String catalogName = String.format("%s_%s", teamId, dataSourceId);
                         final CatalogModel catalogModel = catalogs.computeIfAbsent(String.valueOf(teamId),
-                                k -> new CatalogModel(String.valueOf(teamId), driverClassPath, sourceType, teamId));
+                                k -> new CatalogModel(catalogName, driverClassPath, sourceType, teamId));
 
                         catalogModel.addProperty(name, value);
                     }
                 } else {
+                    final String catalogName = String.format("%s_%s", teamId, dataSourceId);
                     final CatalogModel catalogModel = catalogs.computeIfAbsent(String.valueOf(teamId),
-                            k -> new CatalogModel(String.valueOf(teamId), driverClassPath, sourceType, teamId));
+                            k -> new CatalogModel(catalogName, driverClassPath, sourceType, teamId));
 
                     catalogModel.addProperty(name, value);
                 }
