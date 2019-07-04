@@ -27,10 +27,10 @@ import java.util.Properties;
 public class ShannonDBMysqlReader
 {
     private static final String DRIVER = "com.mysql.jdbc.Driver";
-    private static String URL = "jdbc:mysql://127.0.0.1:3306/dc1-slicingdice-2018";
+    private static String URL = "jdbc:mysql://158.69.246.231:3306/dc1-slicingdice-2018";
 
-    private static String USER = "root";
-    private static String PASS = "";
+    private static String USER = "slicingdice";
+    private static String PASS = "BJPi5iBhWW";
 
     public ShannonDBMysqlReader()
     {
