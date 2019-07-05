@@ -154,6 +154,9 @@ public class MysqlCatalogStore implements CatalogStore
         Map<String, String> properties = new HashMap<>();
         if (!connectorName.equals("shannondb")) {
             properties.put("connection-url", mountUrl(model));
+            if (connectorName.equals("mysql")){
+                properties.put("case-insensitive-name-matching", "true");
+            }
         }
 
         connectorManager.createConnection(catalogName, connectorName, ImmutableMap.copyOf(properties));
@@ -170,10 +173,6 @@ public class MysqlCatalogStore implements CatalogStore
             final CatalogModel.Parameters parameters = parametersList.get(i);
 
             final String name = parameters.getConfigName();
-
-            if (name.equals("database")) {
-                continue;
-            }
 
             final String value = parameters.getValue();
 
