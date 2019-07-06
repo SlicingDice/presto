@@ -95,7 +95,7 @@ public class SimpleNodeSelector
     @Override
     public List<InternalNode> selectRandomNodes(int limit, Set<InternalNode> excludedNodes)
     {
-        return selectNodes(limit, randomizedNodes(nodeMap.get().get(), includeCoordinator, excludedNodes));
+        return selectNodes(limit, randomizedNodes(nodeManager.getAllNodes(), includeCoordinator, excludedNodes));
     }
 
     @Override
@@ -105,7 +105,7 @@ public class SimpleNodeSelector
         NodeMap nodeMap = this.nodeMap.get().get();
         NodeAssignmentStats assignmentStats = new NodeAssignmentStats(nodeTaskMap, nodeMap, existingTasks);
 
-        ResettableRandomizedIterator<InternalNode> randomCandidates = randomizedNodes(nodeMap, includeCoordinator, ImmutableSet.of());
+        ResettableRandomizedIterator<InternalNode> randomCandidates = randomizedNodes(nodeManager.getAllNodes(), includeCoordinator, ImmutableSet.of());
         Set<InternalNode> blockedExactNodes = new HashSet<>();
         boolean splitWaitingForAnyNode = false;
         for (Split split : splits) {

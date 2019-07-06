@@ -29,6 +29,7 @@ import io.airlift.stats.CounterStat;
 import io.prestosql.connector.CatalogName;
 import io.prestosql.execution.NodeTaskMap;
 import io.prestosql.execution.RemoteTask;
+import io.prestosql.metadata.AllNodes;
 import io.prestosql.metadata.InternalNode;
 import io.prestosql.metadata.InternalNodeManager;
 import io.prestosql.metadata.Split;
@@ -204,10 +205,10 @@ public class NodeScheduler
         return selected;
     }
 
-    public static ResettableRandomizedIterator<InternalNode> randomizedNodes(NodeMap nodeMap, boolean includeCoordinator, Set<InternalNode> excludedNodes)
+    public static ResettableRandomizedIterator<InternalNode> randomizedNodes(AllNodes nodeMap, boolean includeCoordinator, Set<InternalNode> excludedNodes)
     {
-        ImmutableList<InternalNode> nodes = nodeMap.getNodesByHostAndPort().values().stream()
-                .filter(node -> includeCoordinator || !nodeMap.getCoordinatorNodeIds().contains(node.getNodeIdentifier()))
+        ImmutableList<InternalNode> nodes = nodeMap.getActiveNodes().stream()
+                .filter(node -> includeCoordinator || !nodeMap.getActiveCoordinators().contains(node))
                 .filter(node -> !excludedNodes.contains(node))
                 .collect(toImmutableList());
         return new ResettableRandomizedIterator<>(nodes);
